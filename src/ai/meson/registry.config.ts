@@ -37,7 +37,7 @@ export const MESON_REGISTRY: MesonEntry[] = [
   { mesonId: "meson-5.0", mesonName: "Meson 5.0", category: "tts", providerId: "gemini", providerModelId: "gemini-3.1-flash-tts-preview", declaredStability: "preview", blurb: "แปลงข้อความเป็นเสียง" },
 
   // 6.x — Video Generation / Editing
-  { mesonId: "meson-6.0", mesonName: "Meson 6.0", category: "video", providerId: "gemini", providerModelId: "gemini-omni-flash", declaredStability: "experimental", blurb: "สร้าง/แก้ไขวิดีโอ" },
+  { mesonId: "meson-6.0", mesonName: "Meson 6.0", category: "video", providerId: "gemini", providerModelId: "gemini-omni-flash-preview", declaredStability: "experimental", blurb: "สร้าง/แก้ไขวิดีโอ" },
 
   // 7.x — Embeddings / Semantic Search / RAG
   { mesonId: "meson-7.0", mesonName: "Meson 7.0", category: "embedding", providerId: "gemini", providerModelId: "gemini-embedding-2-preview", declaredStability: "preview", blurb: "Embedding รุ่นล่าสุด" },
