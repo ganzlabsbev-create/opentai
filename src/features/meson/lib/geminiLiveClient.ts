@@ -34,7 +34,7 @@ function floatTo16BitPCM(input: Float32Array): Int16Array {
 function base64FromInt16(pcm: Int16Array): string {
   const bytes = new Uint8Array(pcm.buffer, pcm.byteOffset, pcm.byteLength);
   let binary = "";
-  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]!);
   return btoa(binary);
 }
 
@@ -139,7 +139,7 @@ export class GeminiLiveClient {
     const ratio = fromRate / toRate;
     const outLength = Math.floor(input.length / ratio);
     const out = new Float32Array(outLength);
-    for (let i = 0; i < outLength; i++) out[i] = input[Math.floor(i * ratio)];
+    for (let i = 0; i < outLength; i++) out[i] = input[Math.floor(i * ratio)]!;
     return out;
   }
 
@@ -170,7 +170,7 @@ export class LiveAudioPlayer {
     if (!this.ctx) this.ctx = new AudioContext({ sampleRate: OUTPUT_SAMPLE_RATE });
     const buffer = this.ctx.createBuffer(1, pcm16.length, OUTPUT_SAMPLE_RATE);
     const channel = buffer.getChannelData(0);
-    for (let i = 0; i < pcm16.length; i++) channel[i] = pcm16[i] / 0x8000;
+    for (let i = 0; i < pcm16.length; i++) channel[i] = pcm16[i]! / 0x8000;
 
     const source = this.ctx.createBufferSource();
     source.buffer = buffer;
