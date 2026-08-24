@@ -1,0 +1,88 @@
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   Design tokens — ThaiAI_Architecture.md §3
+   These are the single source of truth for color/radius/shadow.
+   tailwind.config.ts only re-exposes them as utility classes.
+   ========================================================================== */
+:root {
+  --bg: #fafaf9;
+  --surface: #ffffff;
+  --surface-sunk: #f6f6f5;
+  --surface-elevated: #f4f4f3;
+  --text: #171717;
+  --text-muted: #6b6b68;
+  --border: #e5e4e1;
+  --accent: #2e6f5e;
+  --accent-soft: #eaf2ef;
+  --accent-text: #ffffff;
+  --danger: #c1443a;
+  --danger-soft: #fbeeec;
+  --success: #2f8558;
+  --warning: #b8792a;
+  --warning-soft: #f7efe1;
+  --overlay: rgba(20, 20, 18, 0.35);
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+
+  --shadow-sm: 0 1px 2px rgba(20, 20, 18, 0.06), 0 1px 1px rgba(20, 20, 18, 0.04);
+  --shadow-md: 0 8px 24px rgba(20, 20, 18, 0.12), 0 2px 8px rgba(20, 20, 18, 0.06);
+
+  --font-sans: "Inter", "IBM Plex Sans Thai", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "IBM Plex Mono", monospace;
+}
+
+.dark {
+  --bg: #0b0c0e;
+  --surface: #15171a;
+  --surface-sunk: #17181a;
+  --surface-elevated: #1e2124;
+  --text: #ededec;
+  --text-muted: #8b8d91;
+  --border: #2a2d31;
+  --accent: #4fa98a;
+  --accent-soft: #15211d;
+  --accent-text: #0e0f10;
+  --danger: #e5695d;
+  --danger-soft: #241715;
+  --success: #4dae7c;
+  --warning: #d9a24e;
+  --warning-soft: #241d10;
+  --overlay: rgba(0, 0, 0, 0.55);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+}
+
+textarea::placeholder,
+input::placeholder {
+  color: var(--text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
