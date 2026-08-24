@@ -34,7 +34,7 @@ function extractVideo(result: unknown): { uri?: string; base64?: { mimeType: str
   const dataMatch = json.match(/"mimeType"\s*:\s*"(video\/[^"]+)"[^}]*"data"\s*:\s*"([A-Za-z0-9+/=]+)"/);
   return {
     uri: uriMatch?.[1],
-   base64: dataMatch ? { mimeType: dataMatch[1]!, data: dataMatch[2]! } : undefined,
+    base64: dataMatch ? { mimeType: dataMatch[1]!, data: dataMatch[2]! } : undefined,
   };
 }
 
