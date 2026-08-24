@@ -16,12 +16,20 @@ interface LiveTokenBody {
  * design). The token itself is single-purpose and expires quickly, so even
  * if it leaked it's low-value.
  *
- * NOTE: the Live API's ephemeral-token endpoint (v1alpha `authTokens`) is a
- * preview surface that postdates this assistant's training data — the
- * field names below (expireTime/newSessionExpireTime/liveConnectConstraints)
- * are the documented shape as of Google's last known Live API docs, but
- * MUST be verified against current docs before shipping, since preview
- * APIs like this change without notice.
+ * Endpoint/shape verified against Google's current Live API docs
+ * (ai.google.dev/gemini-api/docs/live-api/ephemeral-tokens and
+ * /gemini-api/docs/live-api/get-started-websocket, checked 2026-08):
+ *   - Token creation: POST /v1beta/auth_tokens (snake_case path — NOT
+ *     "/v1alpha/authTokens" as an earlier draft of this route used), auth
+ *     via the `x-goog-api-key` header rather than a `?key=` query param.
+ *   - `bidiGenerateContentSetup.model` locks the session to this Meson's
+ *     backing model server-side, so the client can't be tricked into
+ *     opening a session against a different model with our quota.
+ *   - The browser connects with:
+ *     wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContentConstrained?access_token={token}
+ *   - This is still a preview surface (Live API generally, ephemeral
+ *     tokens specifically) — re-verify against current docs before
+ *     shipping, since Google has changed this shape before without notice.
  */
 export async function POST(req: NextRequest) {
   let body: LiveTokenBody;
@@ -45,18 +53,18 @@ export async function POST(req: NextRequest) {
   }
 
   const now = Date.now();
-  const url = `https://generativelanguage.googleapis.com/v1alpha/authTokens?key=${encodeURIComponent(resolved.apiKey)}`;
+  const url = "https://generativelanguage.googleapis.com/v1beta/auth_tokens";
 
   const upstream = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "x-goog-api-key": resolved.apiKey },
     body: JSON.stringify({
       // Token is valid for 5 minutes to start a session, and the session
       // itself may run for up to 30 minutes once connected.
       expireTime: new Date(now + 5 * 60 * 1000).toISOString(),
       newSessionExpireTime: new Date(now + 5 * 60 * 1000).toISOString(),
       uses: 1,
-      liveConnectConstraints: {
+      bidiGenerateContentSetup: {
         model: `models/${entry.providerModelId}`,
       },
     }),
@@ -72,6 +80,6 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     mesonId: entry.mesonId,
     model: entry.providerModelId,
-    token: data.name, // the ephemeral token string the browser uses as the WS auth key
+    token: data.name, // e.g. "auth_tokens/xyz" — the browser passes this as ?access_token=
   });
 }

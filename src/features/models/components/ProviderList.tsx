@@ -48,7 +48,7 @@ export function ProviderList() {
     const { [providerId]: _removed, ...rest } = settings.apiKeys;
     await updateSettings({ apiKeys: rest });
     if (settings.defaultProviderId === providerId) {
-      await updateSettings({ defaultProviderId: "mock", defaultModelId: "mock-v1" });
+      await updateSettings({ defaultProviderId: "meson", defaultModelId: "meson-1.0" });
     }
     toast("ตัดการเชื่อมต่อแล้ว");
   };

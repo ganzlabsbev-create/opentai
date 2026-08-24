@@ -86,9 +86,15 @@ export function SettingsSections() {
       <SettingsRow label="การจัดเส้นทางอัตโนมัติ" desc="สลับ provider เมื่อ quota หมด">
         <Toggle checked={settings.autoRouting} onChange={(v) => updateSettings({ autoRouting: v })} />
       </SettingsRow>
+      <SettingsRow label="ใช้ Meson 7.x สร้าง embedding" desc="ใช้ embedding จาก Meson แทนการค้นหาด้วยคำสำคัญสำหรับบริบท/RAG">
+        <Toggle
+          checked={settings.useMesonEmbeddingsForContext}
+          onChange={(v) => updateSettings({ useMesonEmbeddingsForContext: v })}
+        />
+      </SettingsRow>
 
       <SettingsSectionLabel>ความเป็นส่วนตัว</SettingsSectionLabel>
-      <SettingsRow label="โหมด local-only" desc="ไม่เชื่อมต่อ provider ภายนอก (ใช้ Mock Provider เท่านั้น)">
+      <SettingsRow label="โหมด local-only" desc="ปิดการเชื่อมต่อภายนอกทั้งหมด (จะไม่มี provider ให้ใช้งาน)">
         <Toggle checked={settings.localOnly} onChange={(v) => updateSettings({ localOnly: v })} />
       </SettingsRow>
       <SettingsRow label="ล้างประวัติแชท">

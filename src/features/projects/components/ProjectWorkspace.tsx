@@ -17,6 +17,7 @@ import { assembleContext, type ContextSourceFile } from "@/core/context";
 import { diffLines } from "@/core/diff";
 import { extractCodeMetadata } from "@/core/code";
 import { routeGenerate } from "@/ai/router";
+import { getProvider } from "@/ai/providers";
 import { writeFileBytes } from "@/core/files";
 import { parseFile } from "@/core/parsers";
 import { updateFileRecord } from "@/core/storage";
@@ -228,7 +229,8 @@ function AiActionPanel({ actionId, projectId }: { actionId: string; projectId: s
   const [error, setError] = useState<AppError | null>(null);
   const [providerLabel, setProviderLabel] = useState<string | null>(null);
 
-  const hasConfiguredProvider = settings.defaultProviderId === "mock" || !!settings.apiKeys[settings.defaultProviderId];
+  const defaultProvider = getProvider(settings.defaultProviderId);
+  const hasConfiguredProvider = !!defaultProvider?.isConfigured(settings.apiKeys[settings.defaultProviderId]);
 
   const run = async () => {
     const files = filesForProject(projectId);
@@ -263,7 +265,7 @@ function AiActionPanel({ actionId, projectId }: { actionId: string; projectId: s
       <EmptyState
         icon={FolderOpen}
         title="ยังไม่ได้ตั้งค่า AI provider สำหรับการวิเคราะห์นี้"
-        desc="ไปที่หน้าโมเดลเพื่อเชื่อมต่อ provider ก่อน หรือใช้ Mock Provider (ค่าเริ่มต้น) เพื่อทดลองระบบ"
+        desc="ไปที่หน้าโมเดลเพื่อเชื่อมต่อ provider ก่อน (Meson ใช้งานได้ทันทีผ่าน key กลาง ไม่ต้องตั้งค่าเพิ่ม)"
       />
     );
   }

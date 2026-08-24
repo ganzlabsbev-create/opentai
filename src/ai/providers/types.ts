@@ -20,9 +20,9 @@ export interface GenerateParams {
 
 /**
  * AIProvider interface — ThaiAI_Phase2_Prompt.md item 6. Implementations:
- * MockProvider (always available, no key) and GeminiProvider (BYOK). Every
- * implementation streams via an async generator so `ai/router` and
- * `useStreaming` don't need to know which provider is behind the call.
+ * MesonProvider (always available, shared key + BYOK) and GeminiProvider
+ * (BYOK). Every implementation streams via an async generator so `ai/router`
+ * and `useStreaming` don't need to know which provider is behind the call.
  */
 export interface AIProvider {
   id: string;

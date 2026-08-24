@@ -22,7 +22,7 @@ export function ModelSelectionProvider({ children }: { children: ReactNode }) {
   const models = useMemo(() => deriveModels(settings), [settings]);
 
   const current = models.find((m) => m.provider === settings.defaultProviderId && m.id === settings.defaultModelId);
-  const selectedModel = current?.name ?? models[0]?.name ?? "Mock Provider";
+  const selectedModel = current?.name ?? models[0]?.name ?? "ยังไม่ได้เลือกโมเดล";
 
   const setSelectedModel = useCallback(
     (name: string) => {
