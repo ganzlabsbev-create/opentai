@@ -49,7 +49,7 @@ export function Drawer({ open, onClose }: DrawerProps) {
             <div className="flex h-[22px] w-[22px] items-center justify-center rounded-[7px] bg-accent">
               <Sparkles size={12} className="text-accent-text" />
             </div>
-            <span className="text-[14.5px] font-bold text-text">ThaiAI</span>
+            <span className="text-[14.5px] font-bold text-text">OpenTai</span>
           </div>
           <IconButton icon={X} onClick={onClose} title="ปิด" />
         </div>

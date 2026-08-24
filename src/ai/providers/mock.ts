@@ -25,8 +25,8 @@ export const MockProvider: AIProvider = {
   desc: "ใช้พัฒนา/ทดสอบโดยไม่ต้องมี API key — ไม่ส่งข้อมูลออกจากเครื่อง",
   requiresApiKey: false,
   models: [
-    { id: "mock-v1", name: "ThaiAI Mock v1", capability: "แชท, โค้ด", context: "32K" },
-    { id: "mock-vision", name: "ThaiAI Mock Vision", capability: "แชท, รูปภาพ", context: "16K" },
+    { id: "mock-v1", name: "OpenTai Mock v1", capability: "แชท, โค้ด", context: "32K" },
+    { id: "mock-vision", name: "OpenTai Mock Vision", capability: "แชท, รูปภาพ", context: "16K" },
   ],
   isConfigured: () => true,
 

@@ -30,7 +30,7 @@ export default function ChatRootPage() {
   return (
     <>
       <TopBar
-        title="ThaiAI"
+        title="OpenTai"
         onMenu={openDrawer}
         right={<IconButton icon={Plus} title="แชทใหม่" onClick={() => setInput("")} />}
       />

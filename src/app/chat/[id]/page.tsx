@@ -23,7 +23,7 @@ export default function ChatConversationPage({ params }: { params: { id: string 
 
   return (
     <>
-      <TopBar title={conv ? conv.title : "ThaiAI"} onBack={() => router.push("/")} />
+      <TopBar title={conv ? conv.title : "OpenTai"} onBack={() => router.push("/")} />
       <ChatScreen
         conv={conv}
         input={input}

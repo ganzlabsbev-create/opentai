@@ -11,7 +11,7 @@ import { DrawerProvider } from "@/components/layout/DrawerProvider";
 import { AppFrame } from "@/components/layout/AppFrame";
 
 export const metadata: Metadata = {
-  title: "ThaiAI",
+  title: "OpenTai",
   description: "Client-first, serverless, provider-agnostic AI workspace",
   manifest: "/manifest.json",
   icons: { icon: "/icons/icon.svg", apple: "/icons/icon-192.png" },

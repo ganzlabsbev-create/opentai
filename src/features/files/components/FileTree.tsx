@@ -72,7 +72,7 @@ export function FileTree() {
                     {formatBytes(f.size)} · {formatRelativeTime(f.updatedAt)}
                     {!f.parsed && " · แยกวิเคราะห์ไม่สำเร็จ"}
                   </div>
-                  {snippet && <div className="mt-0.5 truncate text-[11px] text-text-muted italic">"{snippet}"</div>}
+                  {snippet && <div className="mt-0.5 truncate text-[11px] text-text-muted italic">&quot;{snippet}&quot;</div>}
                 </div>
                 <IconButton icon={Trash2} size={15} title="ลบ" onClick={() => removeFile(f.id)} />
               </div>

@@ -57,7 +57,7 @@ export function ChatScreen({
             <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-accent">
               <Sparkles size={19} className="text-accent-text" />
             </div>
-            <div className="text-[19px] font-bold text-text">คุยกับ ThaiAI</div>
+            <div className="text-[19px] font-bold text-text">คุยกับ OpenTai</div>
             <div className="mt-0.5 text-[13px] text-text-muted">ถามอะไรก็ได้ หรือแนบไฟล์เพื่อเริ่ม</div>
           </div>
           <div className="flex w-full max-w-[420px] gap-2 overflow-x-auto pb-0.5">

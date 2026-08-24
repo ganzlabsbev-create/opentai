@@ -1,6 +1,6 @@
 {
-  "name": "ThaiAI",
-  "short_name": "ThaiAI",
+  "name": "OpenTai",
+  "short_name": "OpenTai",
   "description": "Client-first, serverless, provider-agnostic AI workspace",
   "start_url": "/",
   "display": "standalone",
