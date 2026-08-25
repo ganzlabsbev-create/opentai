@@ -1,6 +1,6 @@
 "use client";
 
-import { FolderOpen, GitCompare, Link2, Loader2, Trash2 } from "lucide-react";
+import { Archive, FolderOpen, GitCompare, Link2, Loader2, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Button } from "@/components/ui/Button";
@@ -23,6 +23,7 @@ import { parseFile } from "@/core/parsers";
 import { updateFileRecord } from "@/core/storage";
 import { AppError } from "@/types/errors";
 import { fileIcon, formatBytes } from "@/lib/format";
+import { exportProjectZip } from "@/features/projects/lib/exportProjectZip";
 import type { Project } from "@/types/project";
 
 const ACTION_PROMPTS: Record<string, string> = {
@@ -42,6 +43,36 @@ export function ProjectHeader({ project, fileCount }: ProjectHeaderProps) {
     <div className="mb-4">
       <div className="text-xs text-text-muted">{fileCount} ไฟล์ในโปรเจกต์นี้</div>
     </div>
+  );
+}
+
+/** "ดาวน์โหลดทั้งโปรเจกต์เป็น zip" — zips every file in the project's workspace client-side (see exportProjectZip). */
+function ExportZipButton({ project }: { project: Project }) {
+  const toast = useToast();
+  const { filesForProject } = useFiles();
+  const [exporting, setExporting] = useState(false);
+  const files = filesForProject(project.id);
+
+  if (files.length === 0) return null;
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      await exportProjectZip(project.name, files, {
+        onLargeExport: (totalBytes) =>
+          window.confirm(`ไฟล์รวมกันประมาณ ${formatBytes(totalBytes)} การรวมเป็น zip อาจใช้เวลาสักครู่ ต้องการดำเนินการต่อหรือไม่?`),
+      });
+    } catch (err) {
+      toast(AppError.from(err).userMessage, "danger");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  return (
+    <Button size="sm" variant="outline" icon={exporting ? undefined : Archive} onClick={handleExport} disabled={exporting} className="mb-4">
+      {exporting ? <Loader2 size={14} className="animate-spin" /> : "ดาวน์โหลดทั้งโปรเจกต์เป็น zip"}
+    </Button>
   );
 }
 
@@ -313,6 +344,7 @@ export function ProjectWorkspace({ project }: { project: Project }) {
   return (
     <>
       <ProjectHeader project={project} fileCount={fileCount} />
+      <ExportZipButton project={project} />
       <FileDropzone projectId={project.id} />
       <ProjectFileList projectId={project.id} />
       <ProjectActions onAction={setActiveAction} />

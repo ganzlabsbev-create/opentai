@@ -8,6 +8,8 @@ import { useSettings } from "@/features/settings/store/SettingsProvider";
 import { useMesonModels } from "@/features/meson/lib/useMesonModels";
 import { MesonModelPicker } from "@/features/meson/components/MesonModelPicker";
 import { mesonPostJson } from "@/features/meson/lib/mesonClient";
+import { saveAssistantFile, base64ToArrayBuffer, extFromMimeType } from "@/features/chat/lib/saveAssistantFile";
+import { useFiles } from "@/features/files/store/FilesProvider";
 import { AppError } from "@/types/errors";
 
 // Gemini's documented prebuilt voice names as of the last confirmed docs —
@@ -23,6 +25,7 @@ interface TtsResult {
 export function TtsStudio() {
   const toast = useToast();
   const { settings } = useSettings();
+  const { registerFile } = useFiles();
   const { models, selected, setSelected, error } = useMesonModels("tts");
   const [text, setText] = useState("");
   const [voice, setVoice] = useState<string>("");
@@ -42,6 +45,16 @@ export function TtsStudio() {
         apiKey
       );
       setResult(data);
+      try {
+        const { entry } = await saveAssistantFile(base64ToArrayBuffer(data.base64), {
+          name: `meson-tts-${Date.now()}.${extFromMimeType(data.mimeType, "wav")}`,
+          mimeType: data.mimeType,
+          mediaType: "audio",
+        });
+        registerFile(entry);
+      } catch {
+        // Non-fatal — playback/download below still works even if saving to /library fails.
+      }
     } catch (err) {
       toast(AppError.from(err).message, "danger");
     } finally {

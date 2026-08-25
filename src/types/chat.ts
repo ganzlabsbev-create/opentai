@@ -1,6 +1,19 @@
 export type MessageRole = "user" | "assistant";
 
 /**
+ * A file rendered as a downloadable card at the end of a message (see
+ * MessageRow.tsx). `id` matches a real FileEntry.id — bytes live in OPFS,
+ * this is only the display metadata carried on the message itself.
+ */
+export interface MessageAttachment {
+  id: string;
+  name: string;
+  mimeType: string;
+  size: number;
+  mediaType: "image" | "audio" | "document" | "video" | "archive";
+}
+
+/**
  * What kind of payload this message carries. Defaults to "text" (the
  * original chat-streaming path). The other kinds are produced by the
  * in-composer Meson tools (image/tts/video generation) — see
@@ -26,6 +39,8 @@ export interface ChatMessage {
   mediaStatus?: "generating" | "ready" | "failed";
   /** Only meaningful for kind:"video" — id used to poll /api/meson/video/[jobId]. */
   jobId?: string;
+  /** Downloadable files produced for this message — see saveAssistantFile(). */
+  attachments?: MessageAttachment[];
 }
 
 export interface Conversation {

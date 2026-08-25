@@ -1,5 +1,11 @@
 export type FileKind = "txt" | "md" | "json" | "csv" | "code" | "html" | "css" | "xml" | "yaml" | "sql" | "other";
 
+/** Where a file came from — user upload vs. produced by an AI tool (image/tts/video/document). */
+export type FileSource = "uploaded" | "ai-generated";
+
+/** Only meaningful when `source === "ai-generated"` — drives the /library tabs. */
+export type FileMediaType = "image" | "audio" | "document" | "video";
+
 /**
  * Metadata row stored in IndexedDB (`core/storage`). The actual file bytes
  * live in OPFS (`core/files`), keyed by the same `id` — this record never
@@ -20,4 +26,13 @@ export interface FileEntry {
   parsed: boolean;
   /** First ~200 chars of parsed text, cached for quick list/preview rendering. */
   preview: string;
+  /**
+   * "uploaded" (default) vs. "ai-generated". Added after the original schema —
+   * rows written before this field existed don't have it in IndexedDB, so
+   * every read path normalizes it via `withFileDefaults` (core/storage/files.ts)
+   * instead of assuming it's present.
+   */
+  source: FileSource;
+  /** Only set when source === "ai-generated". Powers the /library tab filter. */
+  mediaType?: FileMediaType;
 }

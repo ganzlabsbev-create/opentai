@@ -84,7 +84,7 @@ export function ChatScreen({
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4">
           <div className="mx-auto max-w-[680px]">
             {conv.messages.map((m) => (
-              <MessageRow key={m.id} msg={m} onRegenerate={regenerate} />
+              <MessageRow key={m.id} msg={m} convId={conv.id} onRegenerate={regenerate} />
             ))}
           </div>
         </div>

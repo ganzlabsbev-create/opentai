@@ -39,6 +39,13 @@ interface FilesCtxValue {
   readFileContent: (id: string) => Promise<string>;
   searchFiles: (query: string, projectId?: string | null) => Promise<SearchResult[]>;
   filesForProject: (projectId: string) => FileEntry[];
+  /**
+   * Merges a FileEntry that was already written to OPFS + IndexedDB by
+   * something outside this provider (e.g. `saveAssistantFile`) into local
+   * state, so /library and anything else reading `files` picks it up
+   * without waiting for a reload. Does not touch storage itself.
+   */
+  registerFile: (entry: FileEntry) => void;
 }
 
 const FilesContext = createContext<FilesCtxValue | null>(null);
@@ -99,6 +106,7 @@ export function FilesProvider({ children }: { children: ReactNode }) {
             projectId,
             parsed,
             preview,
+            source: "uploaded",
           };
           await putFileRecord(entry);
           setFiles((fs) => [entry, ...fs]);
@@ -148,8 +156,14 @@ export function FilesProvider({ children }: { children: ReactNode }) {
 
   const filesForProject = useCallback((projectId: string) => files.filter((f) => f.projectId === projectId), [files]);
 
+  const registerFile = useCallback((entry: FileEntry) => {
+    setFiles((fs) => (fs.some((f) => f.id === entry.id) ? fs.map((f) => (f.id === entry.id ? entry : f)) : [entry, ...fs]));
+  }, []);
+
   return (
-    <FilesContext.Provider value={{ files, loaded, addFiles, removeFile, readFileContent, searchFiles, filesForProject }}>
+    <FilesContext.Provider
+      value={{ files, loaded, addFiles, removeFile, readFileContent, searchFiles, filesForProject, registerFile }}
+    >
       {children}
     </FilesContext.Provider>
   );

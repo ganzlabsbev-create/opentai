@@ -1,6 +1,6 @@
 "use client";
 
-import { Cpu, Folder, FolderKanban, Moon, Plus, Search, Settings as SettingsIcon, Sparkles, Sun, Wand2, X } from "lucide-react";
+import { Cpu, Folder, FolderKanban, Image, Moon, Plus, Search, Settings as SettingsIcon, Sparkles, Sun, Wand2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { IconButton } from "@/components/ui/IconButton";
@@ -10,6 +10,7 @@ import { useConversations } from "@/features/chat/store/ConversationsProvider";
 const DRAWER_LINKS = [
   { id: "projects", label: "โปรเจกต์", icon: FolderKanban, href: "/projects" },
   { id: "files", label: "ไฟล์", icon: Folder, href: "/files" },
+  { id: "library", label: "คลังสื่อ", icon: Image, href: "/library" },
   { id: "meson", label: "เครื่องมือ AI", icon: Wand2, href: "/meson" },
   { id: "models", label: "โมเดล", icon: Cpu, href: "/models" },
   { id: "settings", label: "ตั้งค่า", icon: SettingsIcon, href: "/settings" },

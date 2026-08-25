@@ -8,6 +8,8 @@ import { useSettings } from "@/features/settings/store/SettingsProvider";
 import { useMesonModels } from "@/features/meson/lib/useMesonModels";
 import { MesonModelPicker } from "@/features/meson/components/MesonModelPicker";
 import { mesonPostJson, readFileAsBase64 } from "@/features/meson/lib/mesonClient";
+import { saveAssistantFile, base64ToArrayBuffer, extFromMimeType } from "@/features/chat/lib/saveAssistantFile";
+import { useFiles } from "@/features/files/store/FilesProvider";
 import { AppError } from "@/types/errors";
 
 interface ImageResult {
@@ -24,6 +26,7 @@ interface InputImage {
 export function ImageStudio() {
   const toast = useToast();
   const { settings } = useSettings();
+  const { registerFile } = useFiles();
   const { models, selected, setSelected, error } = useMesonModels("image");
   const [prompt, setPrompt] = useState("");
   const [inputImage, setInputImage] = useState<InputImage | null>(null);
@@ -56,6 +59,21 @@ export function ImageStudio() {
         toast("โมเดลไม่ส่งรูปภาพกลับมา ลองใหม่อีกครั้ง", "danger");
       } else {
         setResults(data.images);
+        // Persist into OPFS + IndexedDB (source: "ai-generated") so results
+        // survive leaving this page instead of only living in this
+        // component's local state — shows up under /library → รูป.
+        for (const [i, img] of data.images.entries()) {
+          try {
+            const { entry } = await saveAssistantFile(base64ToArrayBuffer(img.base64), {
+              name: `meson-image-${Date.now()}-${i + 1}.${extFromMimeType(img.mimeType)}`,
+              mimeType: img.mimeType,
+              mediaType: "image",
+            });
+            registerFile(entry);
+          } catch {
+            // Non-fatal — the image is still shown/downloadable below even if saving to /library fails.
+          }
+        }
       }
     } catch (err) {
       toast(AppError.from(err).message, "danger");

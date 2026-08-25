@@ -11,8 +11,10 @@ import { useSettings } from "@/features/settings/store/SettingsProvider";
 import { useMesonModels } from "@/features/meson/lib/useMesonModels";
 import { mesonPostJson } from "@/features/meson/lib/mesonClient";
 import { useVideoJobPolling } from "@/features/meson/hooks/useVideoJobPolling";
+import { saveAssistantFile, base64ToArrayBuffer, extFromMimeType } from "@/features/chat/lib/saveAssistantFile";
 import { AppError } from "@/types/errors";
 import type { ChatMessage } from "@/types/chat";
+import type { FileMediaType } from "@/types/file";
 
 /** Tools selectable from the composer's "+" menu that bypass the normal chat stream. */
 export type MesonToolKind = "image" | "tts" | "video";
@@ -39,7 +41,7 @@ interface VideoStartResponse {
 export function useConversation(convId: string | null, onCreated?: (id: string) => void) {
   const { getConversation, createConversation, appendMessages, updateMessage, setActiveConvId } = useConversations();
   const { settings } = useSettings();
-  const { files, readFileContent } = useFiles();
+  const { files, readFileContent, registerFile } = useFiles();
   const conv = convId ? getConversation(convId) : undefined;
 
   const [attachedIds, setAttachedIds] = useState<string[]>([]);
@@ -107,6 +109,33 @@ export function useConversation(convId: string | null, onCreated?: (id: string) 
 
   const liveVoice = useLiveVoice(liveModels.selected, handleLiveError);
 
+  // Persists a base64 image/tts/video result to OPFS + IndexedDB (source:
+  // "ai-generated") and attaches it to the message so it (a) survives the
+  // message's mediaUrl not being reloaded from a fresh data: URL and (b)
+  // shows up under /library. Best-effort — a save failure shouldn't hide
+  // the mediaUrl the person can already see/play/download inline.
+  const persistGeneratedMedia = useCallback(
+    async (
+      targetId: string,
+      msgId: string,
+      base64: string,
+      mimeType: string,
+      mediaType: FileMediaType,
+      namePrefix: string
+    ) => {
+      try {
+        const bytes = base64ToArrayBuffer(base64);
+        const name = `${namePrefix}.${extFromMimeType(mimeType, mediaType === "image" ? "png" : mediaType === "audio" ? "wav" : "mp4")}`;
+        const { entry, attachment } = await saveAssistantFile(bytes, { name, mimeType, mediaType });
+        registerFile(entry);
+        updateMessage(targetId, msgId, { attachments: [attachment] });
+      } catch {
+        // Non-fatal: the message already has a working mediaUrl for inline playback/download.
+      }
+    },
+    [registerFile, updateMessage]
+  );
+
   const sendToolMessage = useCallback(
     async (text: string, tool: MesonToolKind) => {
       const content = text.trim();
@@ -140,6 +169,7 @@ export function useConversation(convId: string | null, onCreated?: (id: string) 
               streaming: false,
               mediaUrl: `data:${img.mimeType};base64,${img.base64}`,
             });
+            void persistGeneratedMedia(targetId, aiMsg.id, img.base64, img.mimeType, "image", "opentai-image");
           }
         } catch (err) {
           updateMessage(targetId, aiMsg.id, { streaming: false, errorCode: AppError.from(err).code });
@@ -161,6 +191,7 @@ export function useConversation(convId: string | null, onCreated?: (id: string) 
             streaming: false,
             mediaUrl: `data:${data.mimeType};base64,${data.base64}`,
           });
+          void persistGeneratedMedia(targetId, aiMsg.id, data.base64, data.mimeType, "audio", "opentai-audio");
         } catch (err) {
           updateMessage(targetId, aiMsg.id, { streaming: false, errorCode: AppError.from(err).code });
         }
@@ -189,6 +220,16 @@ export function useConversation(convId: string | null, onCreated?: (id: string) 
               const mediaUrl = media.base64 ? `data:${media.base64.mimeType};base64,${media.base64.data}` : media.uri;
               if (mediaUrl) {
                 updateMessage(targetId!, aiMsg.id, { mediaStatus: "ready", mediaUrl });
+                if (media.base64) {
+                  void persistGeneratedMedia(
+                    targetId!,
+                    aiMsg.id,
+                    media.base64.data,
+                    media.base64.mimeType,
+                    "video",
+                    "opentai-video"
+                  );
+                }
               } else {
                 updateMessage(targetId!, aiMsg.id, { mediaStatus: "failed", errorCode: "PROVIDER_UNAVAILABLE" });
               }
@@ -216,6 +257,7 @@ export function useConversation(convId: string | null, onCreated?: (id: string) 
       ttsModels.selected,
       videoModels.selected,
       pollJob,
+      persistGeneratedMedia,
     ]
   );
 

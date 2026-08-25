@@ -1,15 +1,79 @@
 "use client";
 
-import { Copy, Download, Loader2, RotateCcw } from "lucide-react";
+import { Copy, Download, FileDown, Loader2, RotateCcw } from "lucide-react";
+import { useState } from "react";
 import { IconButton } from "@/components/ui/IconButton";
 import { MarkdownMessage } from "@/components/shared/MarkdownMessage";
+import { AttachmentList } from "@/components/shared/AttachmentCard";
 import { useToast } from "@/components/ui/Toast";
+import { useConversations } from "@/features/chat/store/ConversationsProvider";
+import { useFiles } from "@/features/files/store/FilesProvider";
+import { saveAssistantFile } from "@/features/chat/lib/saveAssistantFile";
+import { generateDocumentFile, DOCUMENT_FORMAT_LABEL, DOCUMENT_FORMAT_MIME, type DocumentFormat } from "@/features/chat/lib/generateDocumentFile";
 import { AppError, type AppErrorCode } from "@/types/errors";
 import type { ChatMessage } from "@/types/chat";
 
 interface MessageRowProps {
   msg: ChatMessage;
+  /** Needed to persist attachments back onto the message when "download as file" is used. */
+  convId: string;
   onRegenerate: (msg: ChatMessage) => void;
+}
+
+const DOCUMENT_FORMATS: DocumentFormat[] = ["docx", "pdf", "xlsx"];
+
+/** "ดาวน์โหลดเป็นไฟล์" — converts the assistant's markdown reply into a real docx/pdf/xlsx, client-side, on demand. */
+function DownloadAsFileMenu({ msg, convId }: { msg: ChatMessage; convId: string }) {
+  const toast = useToast();
+  const { updateMessage } = useConversations();
+  const { registerFile } = useFiles();
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState<DocumentFormat | null>(null);
+
+  const handlePick = async (format: DocumentFormat) => {
+    setOpen(false);
+    setBusy(format);
+    try {
+      const blob = await generateDocumentFile(msg.content, format, "opentai-reply");
+      const { entry, attachment } = await saveAssistantFile(blob, {
+        name: `opentai-reply.${format}`,
+        mimeType: DOCUMENT_FORMAT_MIME[format],
+        mediaType: "document",
+      });
+      registerFile(entry);
+      updateMessage(convId, msg.id, { attachments: [...(msg.attachments ?? []), attachment] });
+      toast("บันทึกไฟล์แล้ว ดูได้ในคลังสื่อ");
+    } catch (err) {
+      toast(AppError.from(err).userMessage, "danger");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <div className="relative inline-block">
+      <IconButton
+        icon={busy ? Loader2 : FileDown}
+        size={14}
+        title="ดาวน์โหลดเป็นไฟล์"
+        onClick={() => setOpen((v) => !v)}
+        className={busy ? "animate-spin" : undefined}
+      />
+      {open && (
+        <div className="absolute left-0 top-9 z-10 min-w-[140px] overflow-hidden rounded-md border border-border bg-surface py-1">
+          {DOCUMENT_FORMATS.map((format) => (
+            <button
+              key={format}
+              onClick={() => handlePick(format)}
+              className="block w-full whitespace-nowrap border-0 bg-transparent px-3 py-1.5 text-left text-[12.5px] text-text hover:bg-surface-sunk"
+            >
+              {DOCUMENT_FORMAT_LABEL[format]}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 /** Best-effort filename extension for a data: URL / remote media URL, for the download link. */
@@ -101,7 +165,7 @@ function MediaBody({ msg }: { msg: ChatMessage }) {
   return null;
 }
 
-export function MessageRow({ msg, onRegenerate }: MessageRowProps) {
+export function MessageRow({ msg, convId, onRegenerate }: MessageRowProps) {
   const toast = useToast();
   const isUser = msg.role === "user";
   const kind = msg.kind ?? "text";
@@ -140,8 +204,9 @@ export function MessageRow({ msg, onRegenerate }: MessageRowProps) {
           )}
         </>
       )}
+      {msg.attachments && msg.attachments.length > 0 && <AttachmentList attachments={msg.attachments} />}
       {!msg.streaming && (
-        <div className="-ml-2 mt-0.5 flex gap-0.5">
+        <div className="-ml-2 mt-0.5 flex items-center gap-0.5">
           <IconButton
             icon={Copy}
             size={14}
@@ -152,6 +217,7 @@ export function MessageRow({ msg, onRegenerate }: MessageRowProps) {
             }}
           />
           <IconButton icon={RotateCcw} size={14} title="ลองใหม่" onClick={() => onRegenerate(msg)} />
+          {kind === "text" && !msg.errorCode && msg.content && <DownloadAsFileMenu msg={msg} convId={convId} />}
         </div>
       )}
     </div>
