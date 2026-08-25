@@ -18,7 +18,7 @@ export default function ChatRootPage() {
   const [input, setInput] = useState("");
   const [modelPickerOpen, setModelPickerOpen] = useState(false);
 
-  const { conv, isStreaming, sendMessage, stopStreaming, attachedIds, toggleAttach } = useConversation(null, (newId) => {
+  const { conv, isStreaming, sendMessage, stopStreaming, attachedIds, toggleAttach, activeTool, setActiveTool, liveVoice } = useConversation(null, (newId) => {
     router.push(`/chat/${newId}`);
   });
 
@@ -45,6 +45,9 @@ export default function ChatRootPage() {
         onOpenModel={() => setModelPickerOpen(true)}
         attachedIds={attachedIds}
         onToggleAttach={toggleAttach}
+        activeTool={activeTool}
+        onSetActiveTool={setActiveTool}
+        liveVoice={liveVoice}
       />
       <ModelPickerSheet
         open={modelPickerOpen}

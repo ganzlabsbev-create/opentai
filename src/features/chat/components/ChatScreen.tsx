@@ -4,6 +4,8 @@ import { Sparkles } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { ChatComposer } from "@/features/chat/components/ChatComposer";
 import { MessageRow } from "@/features/chat/components/MessageRow";
+import type { MesonToolKind } from "@/features/chat/hooks/useConversation";
+import type { useLiveVoice } from "@/features/chat/hooks/useLiveVoice";
 import type { ChatMessage, Conversation } from "@/types/chat";
 
 const SUGGESTIONS = ["อธิบายโค้ดชิ้นนี้", "หา bug ในไฟล์แนบ", "สรุป README", "เขียนฟังก์ชันเรียงคำไทย"];
@@ -19,6 +21,9 @@ interface ChatScreenProps {
   onOpenModel: () => void;
   attachedIds: string[];
   onToggleAttach: (id: string) => void;
+  activeTool: MesonToolKind | null;
+  onSetActiveTool: (tool: MesonToolKind | null) => void;
+  liveVoice: ReturnType<typeof useLiveVoice>;
 }
 
 export function ChatScreen({
@@ -32,6 +37,9 @@ export function ChatScreen({
   onOpenModel,
   attachedIds,
   onToggleAttach,
+  activeTool,
+  onSetActiveTool,
+  liveVoice,
 }: ChatScreenProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastMsg = conv?.messages[conv.messages.length - 1];
@@ -92,6 +100,9 @@ export function ChatScreen({
         onOpenModel={onOpenModel}
         attachedIds={attachedIds}
         onToggleAttach={onToggleAttach}
+        activeTool={activeTool}
+        onSetActiveTool={onSetActiveTool}
+        liveVoice={liveVoice}
       />
     </div>
   );

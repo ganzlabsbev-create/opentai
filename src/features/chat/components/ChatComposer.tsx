@@ -1,8 +1,16 @@
 "use client";
 
-import { ChevronDown, Paperclip, Send, Square, X } from "lucide-react";
+import { ChevronDown, Clapperboard, ImagePlus, Loader2, Mic, MicOff, Paperclip, Plus, Radio, Send, Square, Volume2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useFiles } from "@/features/files/store/FilesProvider";
+import type { MesonToolKind } from "@/features/chat/hooks/useConversation";
+import type { useLiveVoice } from "@/features/chat/hooks/useLiveVoice";
+
+const TOOL_CHIPS: Record<MesonToolKind, { label: string; icon: typeof ImagePlus }> = {
+  image: { label: "โหมดสร้างรูปภาพ", icon: ImagePlus },
+  tts: { label: "โหมดแปลงข้อความเป็นเสียง", icon: Volume2 },
+  video: { label: "โหมดสร้างวิดีโอ", icon: Clapperboard },
+};
 
 interface ChatComposerProps {
   input: string;
@@ -14,6 +22,9 @@ interface ChatComposerProps {
   onOpenModel: () => void;
   attachedIds: string[];
   onToggleAttach: (id: string) => void;
+  activeTool: MesonToolKind | null;
+  onSetActiveTool: (tool: MesonToolKind | null) => void;
+  liveVoice: ReturnType<typeof useLiveVoice>;
 }
 
 export function ChatComposer({
@@ -26,9 +37,13 @@ export function ChatComposer({
   onOpenModel,
   attachedIds,
   onToggleAttach,
+  activeTool,
+  onSetActiveTool,
+  liveVoice,
 }: ChatComposerProps) {
   const { files } = useFiles();
   const taRef = useRef<HTMLTextAreaElement>(null);
+  const [plusOpen, setPlusOpen] = useState(false);
   const [attachOpen, setAttachOpen] = useState(false);
 
   useEffect(() => {
@@ -40,6 +55,44 @@ export function ChatComposer({
 
   const attachedFiles = files.filter((f) => attachedIds.includes(f.id));
 
+  // Gemini Live overlay replaces the normal composer while a call is
+  // connecting/live — no navigation away from the chat screen.
+  if (liveVoice.state !== "idle") {
+    return (
+      <div className="px-3 pt-2" style={{ paddingBottom: "calc(10px + env(safe-area-inset-bottom))" }}>
+        <div className="mx-auto max-w-[680px] rounded-3xl border border-border bg-surface-sunk px-4 py-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              {liveVoice.state === "live" ? (
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-soft">
+                  <Radio size={18} className="animate-pulse text-accent" />
+                </div>
+              ) : (
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-elevated">
+                  <Loader2 size={16} className="animate-spin text-text-muted" />
+                </div>
+              )}
+              <span className="text-[13px] text-text">{liveVoice.state === "live" ? "กำลังคุยเสียงสด" : "กำลังเชื่อมต่อ..."}</span>
+            </div>
+            <button
+              onClick={liveVoice.stop}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-0 bg-danger"
+            >
+              <MicOff size={15} className="text-bg" />
+            </button>
+          </div>
+          {liveVoice.transcript.length > 0 && (
+            <div className="mt-3 max-h-24 space-y-1 overflow-y-auto text-[12.5px] text-text-muted">
+              {liveVoice.transcript.map((line, i) => (
+                <p key={i}>{line}</p>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="px-3 pt-2" style={{ paddingBottom: "calc(10px + env(safe-area-inset-bottom))" }}>
       <div className="mx-auto max-w-[680px]">
@@ -47,6 +100,22 @@ export function ChatComposer({
           <span className="text-xs text-text-muted">{model}</span>
           <ChevronDown size={13} className="text-text-muted" />
         </button>
+
+        {activeTool && (
+          <div className="mb-1.5 flex items-center gap-1.5">
+            <button
+              onClick={() => onSetActiveTool(null)}
+              className="flex items-center gap-1.5 rounded-full border border-accent bg-accent-soft px-2.5 py-1 text-[11.5px] text-accent"
+            >
+              {(() => {
+                const Icon = TOOL_CHIPS[activeTool].icon;
+                return <Icon size={13} />;
+              })()}
+              {TOOL_CHIPS[activeTool].label}
+              <X size={11} />
+            </button>
+          </div>
+        )}
 
         {attachedFiles.length > 0 && (
           <div className="mb-1.5 flex flex-wrap gap-1.5">
@@ -83,9 +152,56 @@ export function ChatComposer({
           </div>
         )}
 
+        {plusOpen && (
+          <div className="mb-1.5 overflow-hidden rounded-md border border-border bg-surface p-1">
+            <button
+              onClick={() => {
+                setPlusOpen(false);
+                setAttachOpen((v) => !v);
+              }}
+              className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-[13px] text-text hover:bg-surface-sunk"
+            >
+              <Paperclip size={15} className="text-text-muted" /> แนบไฟล์
+            </button>
+            <button
+              onClick={() => {
+                onSetActiveTool("image");
+                setPlusOpen(false);
+              }}
+              className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-[13px] text-text hover:bg-surface-sunk"
+            >
+              <ImagePlus size={15} className="text-text-muted" /> สร้างรูปภาพ
+            </button>
+            <button
+              onClick={() => {
+                onSetActiveTool("video");
+                setPlusOpen(false);
+              }}
+              className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-[13px] text-text hover:bg-surface-sunk"
+            >
+              <Clapperboard size={15} className="text-text-muted" /> สร้างวิดีโอ
+            </button>
+            <button
+              onClick={() => {
+                onSetActiveTool("tts");
+                setPlusOpen(false);
+              }}
+              className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-[13px] text-text hover:bg-surface-sunk"
+            >
+              <Volume2 size={15} className="text-text-muted" /> แปลงข้อความเป็นเสียง
+            </button>
+          </div>
+        )}
+
         <div className="flex items-end gap-1 rounded-3xl border border-border bg-surface-sunk py-1.5 pl-2.5 pr-1.5">
-          <button onClick={() => setAttachOpen((v) => !v)} className="shrink-0 border-0 bg-transparent p-1.5">
-            <Paperclip size={18} className={attachOpen || attachedFiles.length > 0 ? "text-accent" : "text-text-muted"} />
+          <button
+            onClick={() => {
+              setAttachOpen(false);
+              setPlusOpen((v) => !v);
+            }}
+            className="shrink-0 border-0 bg-transparent p-1.5"
+          >
+            <Plus size={18} className={plusOpen || !!activeTool || attachedFiles.length > 0 ? "text-accent" : "text-text-muted"} />
           </button>
           <textarea
             ref={taRef}
@@ -97,10 +213,19 @@ export function ChatComposer({
                 onSend();
               }
             }}
-            placeholder="ส่งข้อความ"
+            placeholder={activeTool ? "พิมพ์ prompt แล้วกดส่ง" : "ส่งข้อความ"}
             rows={1}
             className="max-h-[140px] flex-1 resize-none border-0 bg-transparent px-0.5 py-1.5 font-sans text-[14.5px] leading-normal text-text outline-none"
           />
+          {!isStreaming && (
+            <button
+              onClick={liveVoice.start}
+              className="shrink-0 border-0 bg-transparent p-1.5"
+              title="คุยเสียงสด"
+            >
+              <Mic size={18} className="text-text-muted" />
+            </button>
+          )}
           {isStreaming ? (
             <button
               onClick={onStop}

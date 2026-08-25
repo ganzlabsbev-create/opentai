@@ -1,41 +1,22 @@
 "use client";
 
 import { Clapperboard, Loader2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { useSettings } from "@/features/settings/store/SettingsProvider";
 import { useMesonModels } from "@/features/meson/lib/useMesonModels";
 import { MesonModelPicker } from "@/features/meson/components/MesonModelPicker";
-import { mesonGetJson, mesonPostJson } from "@/features/meson/lib/mesonClient";
+import { mesonPostJson } from "@/features/meson/lib/mesonClient";
+import { useVideoJobPolling, type ExtractedVideoMedia } from "@/features/meson/hooks/useVideoJobPolling";
 import { AppError } from "@/types/errors";
 
-const POLL_INTERVAL_MS = 5000;
-
-interface JobStatus {
+interface JobState {
   jobId: string;
   status: "pending" | "done" | "failed";
-  result?: unknown;
+  media?: ExtractedVideoMedia;
+  rawResult?: unknown;
   error?: string;
-}
-
-/**
- * The exact shape of `result` (Google's long-running-operation `response`
- * field for gemini-omni-flash) is unconfirmed against current docs — see
- * the NOTE in /api/meson/video/route.ts. This does a best-effort search for
- * a playable video URI or inline base64 bytes anywhere in the object, and
- * falls back to a raw JSON dump so nothing is silently lost if the shape
- * turns out different once that route is verified against a real response.
- */
-function extractVideo(result: unknown): { uri?: string; base64?: { mimeType: string; data: string } } {
-  if (!result || typeof result !== "object") return {};
-  const json = JSON.stringify(result);
-  const uriMatch = json.match(/"(https?:\/\/[^"]+\.(mp4|webm)[^"]*)"/i);
-  const dataMatch = json.match(/"mimeType"\s*:\s*"(video\/[^"]+)"[^}]*"data"\s*:\s*"([A-Za-z0-9+/=]+)"/);
-  return {
-    uri: uriMatch?.[1],
-    base64: dataMatch ? { mimeType: dataMatch[1]!, data: dataMatch[2]! } : undefined,
-  };
 }
 
 export function VideoStudio() {
@@ -44,43 +25,28 @@ export function VideoStudio() {
   const { models, selected, setSelected, error } = useMesonModels("video");
   const [prompt, setPrompt] = useState("");
   const [starting, setStarting] = useState(false);
-  const [job, setJob] = useState<JobStatus | null>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [job, setJob] = useState<JobState | null>(null);
+  const { pollJob, stopAll } = useVideoJobPolling();
 
   const apiKey = settings.apiKeys["meson"];
 
-  const stopPolling = () => {
-    if (pollRef.current) {
-      clearInterval(pollRef.current);
-      pollRef.current = null;
-    }
-  };
-
-  useEffect(() => stopPolling, []);
-
-  const pollOnce = async (jobId: string) => {
-    try {
-      const data = await mesonGetJson<JobStatus>(`/api/meson/video/${jobId}`);
-      setJob(data);
-      if (data.status !== "pending") {
-        stopPolling();
-        if (data.status === "failed") toast(data.error ?? "สร้างวิดีโอไม่สำเร็จ", "danger");
-      }
-    } catch (err) {
-      stopPolling();
-      toast(AppError.from(err).message, "danger");
-    }
-  };
+  useEffect(() => stopAll, [stopAll]);
 
   const handleGenerate = async () => {
     if (!prompt.trim() || !selected) return;
     setStarting(true);
     setJob(null);
-    stopPolling();
     try {
       const data = await mesonPostJson<{ jobId: string; status: "pending" }>("/api/meson/video", { mesonId: selected, prompt: prompt.trim() }, apiKey);
       setJob({ jobId: data.jobId, status: "pending" });
-      pollRef.current = setInterval(() => pollOnce(data.jobId), POLL_INTERVAL_MS);
+      pollJob(data.jobId, {
+        onDone: (media, rawResult) => setJob({ jobId: data.jobId, status: "done", media, rawResult }),
+        onFailed: (message) => setJob({ jobId: data.jobId, status: "failed", error: message }),
+        onError: (err) => {
+          setJob(null);
+          toast(err.message, "danger");
+        },
+      });
     } catch (err) {
       toast(AppError.from(err).message, "danger");
     } finally {
@@ -88,7 +54,7 @@ export function VideoStudio() {
     }
   };
 
-  const video = job?.status === "done" ? extractVideo(job.result) : {};
+  const video = job?.status === "done" ? job.media ?? {} : {};
 
   return (
     <div>
@@ -129,7 +95,7 @@ export function VideoStudio() {
             </a>
           ) : (
             <pre className="overflow-x-auto whitespace-pre-wrap font-mono text-[11.5px] text-text-muted">
-              {JSON.stringify(job.result, null, 2)}
+              {JSON.stringify(job.rawResult, null, 2)}
             </pre>
           )}
         </div>

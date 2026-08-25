@@ -1,70 +1,18 @@
 "use client";
 
 import { Loader2, Mic, MicOff, Radio } from "lucide-react";
-import { useRef, useState } from "react";
+import { useCallback } from "react";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
-import { useSettings } from "@/features/settings/store/SettingsProvider";
 import { useMesonModels } from "@/features/meson/lib/useMesonModels";
 import { MesonModelPicker } from "@/features/meson/components/MesonModelPicker";
-import { mesonPostJson } from "@/features/meson/lib/mesonClient";
-import { GeminiLiveClient, LiveAudioPlayer } from "@/features/meson/lib/geminiLiveClient";
-import { AppError } from "@/types/errors";
-
-type SessionState = "idle" | "connecting" | "live";
+import { useLiveVoice } from "@/features/chat/hooks/useLiveVoice";
 
 export function LiveVoiceStudio() {
   const toast = useToast();
-  const { settings } = useSettings();
   const { models, selected, setSelected, error } = useMesonModels("live");
-  const [state, setState] = useState<SessionState>("idle");
-  const [transcript, setTranscript] = useState<string[]>([]);
-  const clientRef = useRef<GeminiLiveClient | null>(null);
-  const playerRef = useRef<LiveAudioPlayer | null>(null);
-
-  const apiKey = settings.apiKeys["meson"];
-
-  const stop = () => {
-    clientRef.current?.close();
-    clientRef.current = null;
-    playerRef.current?.close();
-    playerRef.current = null;
-    setState("idle");
-  };
-
-  const start = async () => {
-    if (!selected) return;
-    setState("connecting");
-    setTranscript([]);
-    try {
-      const { token, model } = await mesonPostJson<{ token: string; model: string }>(
-        "/api/meson/live-token",
-        { mesonId: selected },
-        apiKey
-      );
-      if (!token) throw new AppError("PROVIDER_UNAVAILABLE", "Gemini ไม่ส่ง token กลับมา");
-
-      const player = new LiveAudioPlayer();
-      playerRef.current = player;
-
-      const client = new GeminiLiveClient({
-        onOpen: () => setState("live"),
-        onModelTurnAudio: (pcm) => player.push(pcm),
-        onModelTurnText: (text) => setTranscript((t) => [...t, text]),
-        onError: (msg) => {
-          toast(msg, "danger");
-          stop();
-        },
-        onClose: () => setState((s) => (s === "idle" ? s : "idle")),
-      });
-      clientRef.current = client;
-      client.connect(token, model);
-      await client.startMic();
-    } catch (err) {
-      toast(AppError.from(err).message, "danger");
-      setState("idle");
-    }
-  };
+  const handleError = useCallback((msg: string) => toast(msg, "danger"), [toast]);
+  const { state, transcript, start, stop } = useLiveVoice(selected, handleError);
 
   return (
     <div>
