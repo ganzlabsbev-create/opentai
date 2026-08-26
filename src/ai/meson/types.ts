@@ -41,14 +41,23 @@ export type DeclaredStability = "stable" | "preview" | "experimental";
 
 export type LiveStatus = "stable" | "preview" | "experimental" | "unavailable" | "unknown";
 
+/** Every backend a Meson entry can be bound to. Add new ids here first when onboarding a provider. */
+export type MesonProviderId = "gemini" | "mistral";
+
+/** Display label for the real backend, used where the UI shows "Meson X.X — <backend>" for transparency. */
+export const PROVIDER_LABELS: Record<MesonProviderId, string> = {
+  gemini: "Gemini",
+  mistral: "Mistral",
+};
+
 export interface MesonEntry {
   /** Stable id used in URLs/requests, e.g. "meson-1.0". Never reused for a different backing model. */
   mesonId: string;
   /** Display name, e.g. "Meson 1.0". */
   mesonName: string;
   category: MesonCategory;
-  /** Which provider backs this entry. Only "gemini" exists today; kept provider-agnostic for future providers. */
-  providerId: "gemini";
+  /** Which provider backs this entry — gemini or mistral today. */
+  providerId: MesonProviderId;
   /** The real, provider-side model id. Exactly one Meson entry may reference a given (providerId, providerModelId) pair. */
   providerModelId: string;
   declaredStability: DeclaredStability;

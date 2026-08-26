@@ -1,16 +1,20 @@
 import type { MesonEntry } from "./types";
 
 /**
- * Source of truth for Meson ↔ Gemini mapping.
+ * Source of truth for Meson ↔ real-provider mapping (Gemini, Mistral).
  *
  * RULES (enforced by registry.ts, not just convention):
- *   - 1 Meson entry = 1 (providerId, providerModelId) pair.
- *   - The same providerModelId must never appear twice. registry.ts throws
- *     at load time if it does — this is intentional, do not silence it.
+ *   - 1 Meson entry = 1 (providerId, providerModelId) pair — the pair is
+ *     scoped per provider, so e.g. "gemini:x" and "mistral:x" can coexist.
+ *   - The same (providerId, providerModelId) pair must never appear twice.
+ *     registry.ts throws at load time if it does — this is intentional, do
+ *     not silence it.
  *   - To change a mapping, edit this file and redeploy. There is no runtime
  *     edit path (see /app/admin/meson — view only, by design).
  *   - declaredStability is a fallback hint only; live availability always
  *     wins (see availability.ts).
+ *   - Numbering: new entries are appended after the highest existing id in
+ *     their category — never renumber or move an existing entry.
  */
 export const MESON_REGISTRY: MesonEntry[] = [
   // 1.x — General / Chat / Multimodal / Fast
@@ -20,9 +24,18 @@ export const MESON_REGISTRY: MesonEntry[] = [
   { mesonId: "meson-1.3", mesonName: "Meson 1.3", category: "chat", providerId: "gemini", providerModelId: "gemini-3.5-flash-lite", declaredStability: "stable", blurb: "รุ่นเบา ประหยัด เหมาะงานปริมาณมาก" },
   { mesonId: "meson-1.4", mesonName: "Meson 1.4", category: "chat", providerId: "gemini", providerModelId: "gemini-3.1-flash-lite", declaredStability: "stable", blurb: "รุ่นเบาสุด ต้นทุนต่ำสุดในสาย 1.x" },
 
+  // 1.5–1.10 — Mistral general/chat family (BYOK/shared via MISTRAL_API_KEY)
+  { mesonId: "meson-1.5", mesonName: "Meson 1.5", category: "chat", providerId: "mistral", providerModelId: "mistral-medium-3-5", declaredStability: "stable", blurb: "Mistral Medium 3.5 — แชททั่วไป เก่งงาน agent และโค้ด ปรับ reasoning effort ได้" },
+  { mesonId: "meson-1.6", mesonName: "Meson 1.6", category: "chat", providerId: "mistral", providerModelId: "mistral-small-2603", declaredStability: "stable", blurb: "Mistral Small 4 — แชท/เหตุผล/โค้ดในตัวเดียว บริบทยาว 256k" },
+  { mesonId: "meson-1.7", mesonName: "Meson 1.7", category: "chat", providerId: "mistral", providerModelId: "mistral-large-2512", declaredStability: "stable", blurb: "Mistral Large 3 — เรือธง งานเหตุผล/agent ที่ซับซ้อน" },
+  { mesonId: "meson-1.8", mesonName: "Meson 1.8", category: "chat", providerId: "mistral", providerModelId: "ministral-14b-2512", declaredStability: "stable", blurb: "Ministral 3 14B — รุ่นเล็กสาย reasoning ประสิทธิภาพสูง" },
+  { mesonId: "meson-1.9", mesonName: "Meson 1.9", category: "chat", providerId: "mistral", providerModelId: "ministral-8b-2512", declaredStability: "stable", blurb: "Ministral 3 8B — รุ่นเล็ก คุ้มต้นทุนต่อประสิทธิภาพ" },
+  { mesonId: "meson-1.10", mesonName: "Meson 1.10", category: "chat", providerId: "mistral", providerModelId: "ministral-3b-2512", declaredStability: "stable", blurb: "Ministral 3 3B — รุ่นเบาสุดของ Mistral เหมาะงาน edge" },
+
   // 2.x — Pro / Reasoning / Coding
   { mesonId: "meson-2.0", mesonName: "Meson 2.0", category: "pro", providerId: "gemini", providerModelId: "gemini-3.1-pro-preview", declaredStability: "preview", blurb: "โปร เหตุผลเชิงลึก โค้ดดิ้ง" },
   { mesonId: "meson-2.1", mesonName: "Meson 2.1", category: "pro", providerId: "gemini", providerModelId: "gemini-3-flash-preview", declaredStability: "preview", blurb: "เหตุผลเชิงลึกแบบเร็วกว่า" },
+  { mesonId: "meson-2.2", mesonName: "Meson 2.2", category: "pro", providerId: "mistral", providerModelId: "codestral-2508", declaredStability: "stable", blurb: "Codestral — โมเดล Mistral เฉพาะทางโค้ดดิ้ง" },
 
   // 3.x — Image Generation / Editing
   { mesonId: "meson-3.0", mesonName: "Meson 3.0", category: "image", providerId: "gemini", providerModelId: "gemini-3.1-flash-image", declaredStability: "stable", blurb: "สร้าง/แก้ไขรูปภาพ" },

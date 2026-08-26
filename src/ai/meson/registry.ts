@@ -6,7 +6,7 @@ import type { MesonEntry, MesonCategory } from "./types";
  * Throws immediately (fails the build / cold start) if:
  *   - a mesonId is duplicated
  *   - a (providerId, providerModelId) pair backs more than one Meson entry
- * This is the enforcement of "1 Meson = 1 Gemini model, never shared" —
+ * This is the enforcement of "1 Meson = 1 real model, never shared" —
  * it is not just a naming convention, a bad config cannot ship.
  */
 function validateRegistry(entries: MesonEntry[]): void {

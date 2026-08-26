@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { TopBar } from "@/components/layout/TopBar";
-import { CATEGORY_LABELS_TH, type MesonCategory, type MesonModelInfo } from "@/ai/meson/types";
+import { CATEGORY_LABELS_TH, PROVIDER_LABELS, type MesonCategory, type MesonModelInfo } from "@/ai/meson/types";
 
 const STATUS_STYLE: Record<string, string> = {
   stable: "bg-green-100 text-green-800",
@@ -65,7 +65,12 @@ export default function MesonAdminPage() {
                 {list.map((m) => (
                   <div key={m.mesonId} className="flex items-center justify-between rounded-lg bg-surface px-3 py-2">
                     <div>
-                      <div className="text-[13.5px] font-medium text-text">{m.mesonName}</div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[13.5px] font-medium text-text">{m.mesonName}</span>
+                        <span className="rounded bg-surface-sunk px-1.5 py-0.5 text-[10.5px] font-medium text-text-muted">
+                          {PROVIDER_LABELS[m.providerId]}
+                        </span>
+                      </div>
                       <div className="text-[11.5px] text-text-muted">
                         {m.blurb}
                         {m.providerModelId && <span className="ml-1.5 opacity-70">· {m.providerModelId}</span>}

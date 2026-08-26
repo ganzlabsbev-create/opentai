@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { getMesonEntry } from "@/ai/meson/registry";
-import { resolveGeminiKey, mesonErrorResponse, MesonKeyError } from "@/ai/meson/key-resolution";
+import { resolveProviderKey, mesonErrorResponse, MesonKeyError } from "@/ai/meson/key-resolution";
+import { CHAT_PROXIES } from "@/ai/meson/providers";
 
 export const runtime = "nodejs";
 
@@ -11,10 +12,12 @@ interface ChatBody {
 }
 
 /**
- * Proxies to Gemini streamGenerateContent and re-streams the SSE body
- * straight through to the client. Only "chat" and "pro" category Meson
- * entries are accepted here — image/tts/embedding/etc. have their own
- * routes because Gemini's request/response shape differs per modality.
+ * Resolves a Meson chat/pro entry to its real backend (Gemini or Mistral —
+ * see ai/meson/providers) and re-streams the response as SSE. Every
+ * backend's proxy returns the same Gemini-shaped chunk format
+ * (`candidates[0].content.parts[].text`), so the client-side parser in
+ * ai/providers/meson.ts didn't need to change when Mistral was added here —
+ * only this route + the per-provider proxies did.
  */
 export async function POST(req: NextRequest) {
   let body: ChatBody;
@@ -30,54 +33,32 @@ export async function POST(req: NextRequest) {
     return mesonErrorResponse(new MesonKeyError(400, `${entry.mesonName} ไม่ใช่โมเดลแชท ใช้ route นี้ไม่ได้`));
   }
 
+  const proxy = CHAT_PROXIES[entry.providerId];
+  if (!proxy) {
+    // Defensive only — registry.ts + the MesonProviderId union already make
+    // this unreachable for a valid config, but a route must never crash.
+    return mesonErrorResponse(new MesonKeyError(500, `ไม่มี chat proxy สำหรับผู้ให้บริการ "${entry.providerId}"`));
+  }
+
   let resolved;
   try {
-    resolved = await resolveGeminiKey(req);
+    resolved = await resolveProviderKey(req, entry.providerId);
   } catch (err) {
     return mesonErrorResponse(err);
   }
 
-  const contents = (body.messages ?? [])
-    .filter((m) => m.content?.trim().length > 0)
-    .map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
-
-  const requestBody: Record<string, unknown> = { contents };
-  if (body.context?.trim()) {
-    requestBody.systemInstruction = {
-      parts: [{ text: `ใช้บริบทต่อไปนี้ประกอบการตอบเมื่อเกี่ยวข้อง:\n\n${body.context}` }],
-    };
-  }
-
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
-    entry.providerModelId
-  )}:streamGenerateContent?alt=sse&key=${encodeURIComponent(resolved.apiKey)}`;
-
-  let upstream: Response;
   try {
-    upstream = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(requestBody),
+    const response = await proxy({
+      entry,
+      apiKey: resolved.apiKey,
+      messages: body.messages ?? [],
+      context: body.context,
       signal: req.signal,
     });
+    response.headers.set("X-Meson-Used-Shared-Key", String(resolved.usingSharedKey));
+    return response;
   } catch (err) {
-    return mesonErrorResponse(new MesonKeyError(502, "เชื่อมต่อ Gemini ไม่สำเร็จ"));
+    if (err instanceof DOMException && err.name === "AbortError") throw err;
+    return mesonErrorResponse(err);
   }
-
-  if (!upstream.ok || !upstream.body) {
-    const text = await upstream.text().catch(() => "");
-    return mesonErrorResponse(new MesonKeyError(upstream.status, text || "Gemini ตอบกลับผิดพลาด"));
-  }
-
-  // Pass the upstream SSE stream straight through — client-side parsing is
-  // identical to the existing direct-BYOK path (same alt=sse shape).
-  return new Response(upstream.body, {
-    status: 200,
-    headers: {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
-      "X-Meson-Id": entry.mesonId,
-      "X-Meson-Used-Shared-Key": String(resolved.usingSharedKey),
-    },
-  });
 }
