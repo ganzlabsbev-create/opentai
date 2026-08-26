@@ -61,7 +61,7 @@ export function ChatScreen({
       {!hasMessages ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-6 px-6">
           <div className="text-center">
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-accent p-[9px]">
+            <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-xl bg-accent p-[9px]">
               <img src="/brand/ot-mark-white.svg" alt="" className="h-full w-full dark:hidden" />
               <img src="/brand/ot-mark.svg" alt="" className="hidden h-full w-full dark:block" />
             </div>
