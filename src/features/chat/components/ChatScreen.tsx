@@ -1,4 +1,4 @@
-h-10client";
+"use client";
 
 import { useEffect, useRef } from "react";
 import { ChatComposer } from "@/features/chat/components/ChatComposer";
