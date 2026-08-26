@@ -1,6 +1,6 @@
 "use client";
 
-import { Cpu, Folder, FolderKanban, Image, Moon, Plus, Search, Settings as SettingsIcon, Sparkles, Sun, Wand2, X } from "lucide-react";
+import { Cpu, Folder, FolderKanban, Image, Moon, Plus, Search, Settings as SettingsIcon, Sun, Wand2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { IconButton } from "@/components/ui/IconButton";
@@ -48,10 +48,12 @@ export function Drawer({ open, onClose }: DrawerProps) {
       >
         <div className="flex items-center justify-between px-3 pb-2 pt-3.5">
           <div className="flex items-center gap-2 pl-1">
-            <div className="flex h-[22px] w-[22px] items-center justify-center rounded-[7px] bg-accent">
-              <Sparkles size={12} className="text-accent-text" />
+            <div className="flex h-[24px] w-[24px] shrink-0 items-center justify-center rounded-[7px] bg-accent p-[4px]">
+              <img src="/brand/ot-mark-white.svg" alt="" className="h-full w-full dark:hidden" />
+              <img src="/brand/ot-mark.svg" alt="" className="hidden h-full w-full dark:block" />
             </div>
-            <span className="text-[14.5px] font-bold text-text">OpenTai</span>
+            <img src="/brand/opentai-wordmark.svg" alt="OpenTai" className="h-[15px] w-auto dark:hidden" />
+            <img src="/brand/opentai-wordmark-white.svg" alt="OpenTai" className="hidden h-[15px] w-auto dark:block" />
           </div>
           <IconButton icon={X} onClick={onClose} title="ปิด" />
         </div>
