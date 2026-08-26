@@ -52,8 +52,8 @@ export function Drawer({ open, onClose }: DrawerProps) {
               <img src="/brand/ot-mark-white.svg" alt="" className="h-full w-full dark:hidden" />
               <img src="/brand/ot-mark.svg" alt="" className="hidden h-full w-full dark:block" />
             </div>
-            <img src="/brand/opentai-wordmark.svg" alt="OpenTai" className="h-[22px] w-auto dark:hidden" />
-            <img src="/brand/opentai-wordmark-white.svg" alt="OpenTai" className="hidden h-[22px] w-auto dark:block" />
+            <img src="/brand/opentai-wordmark.svg" alt="OpenTai" className="h-[30px] w-auto dark:hidden" />
+            <img src="/brand/opentai-wordmark-white.svg" alt="OpenTai" className="hidden h-[30px] w-auto dark:block" />
           </div>
           <IconButton icon={X} onClick={onClose} title="ปิด" />
         </div>
