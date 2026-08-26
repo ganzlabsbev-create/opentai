@@ -1,6 +1,5 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { ChatComposer } from "@/features/chat/components/ChatComposer";
 import { MessageRow } from "@/features/chat/components/MessageRow";
@@ -62,8 +61,9 @@ export function ChatScreen({
       {!hasMessages ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-6 px-6">
           <div className="text-center">
-            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-accent">
-              <Sparkles size={19} className="text-accent-text" />
+            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-accent p-[9px]">
+              <img src="/brand/ot-mark-white.svg" alt="" className="h-full w-full dark:hidden" />
+              <img src="/brand/ot-mark.svg" alt="" className="hidden h-full w-full dark:block" />
             </div>
             <div className="text-[19px] font-bold text-text">คุยกับ OpenTai</div>
             <div className="mt-0.5 text-[13px] text-text-muted">ถามอะไรก็ได้ หรือแนบไฟล์เพื่อเริ่ม</div>

@@ -48,12 +48,12 @@ export function Drawer({ open, onClose }: DrawerProps) {
       >
         <div className="flex items-center justify-between px-3 pb-2 pt-3.5">
           <div className="flex items-center gap-2 pl-1">
-            <div className="flex h-[24px] w-[24px] shrink-0 items-center justify-center rounded-[7px] bg-accent p-[4px]">
+            <div className="flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-[8px] bg-accent p-[5px]">
               <img src="/brand/ot-mark-white.svg" alt="" className="h-full w-full dark:hidden" />
               <img src="/brand/ot-mark.svg" alt="" className="hidden h-full w-full dark:block" />
             </div>
-            <img src="/brand/opentai-wordmark.svg" alt="OpenTai" className="h-[15px] w-auto dark:hidden" />
-            <img src="/brand/opentai-wordmark-white.svg" alt="OpenTai" className="hidden h-[15px] w-auto dark:block" />
+            <img src="/brand/opentai-wordmark.svg" alt="OpenTai" className="h-[22px] w-auto dark:hidden" />
+            <img src="/brand/opentai-wordmark-white.svg" alt="OpenTai" className="hidden h-[22px] w-auto dark:block" />
           </div>
           <IconButton icon={X} onClick={onClose} title="ปิด" />
         </div>
