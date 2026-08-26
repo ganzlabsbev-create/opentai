@@ -61,7 +61,7 @@ export interface MesonEntry {
   /** The real, provider-side model id. Exactly one Meson entry may reference a given (providerId, providerModelId) pair. */
   providerModelId: string;
   declaredStability: DeclaredStability;
-  /** Short Thai description of what this Meson is good for, shown in the picker. */
+  /** The real model's display name (not a function description — the category already implies that), shown in the picker. e.g. "Gemini 3.7 Flash", "Mistral Medium 3.5". */
   blurb: string;
 }
 
