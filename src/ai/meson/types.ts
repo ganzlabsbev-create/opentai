@@ -42,12 +42,13 @@ export type DeclaredStability = "stable" | "preview" | "experimental";
 export type LiveStatus = "stable" | "preview" | "experimental" | "unavailable" | "unknown";
 
 /** Every backend a Meson entry can be bound to. Add new ids here first when onboarding a provider. */
-export type MesonProviderId = "gemini" | "mistral";
+export type MesonProviderId = "gemini" | "mistral" | "pollinations";
 
 /** Display label for the real backend, used where the UI shows "Meson X.X — <backend>" for transparency. */
 export const PROVIDER_LABELS: Record<MesonProviderId, string> = {
   gemini: "Gemini",
   mistral: "Mistral",
+  pollinations: "Pollinations",
 };
 
 export interface MesonEntry {

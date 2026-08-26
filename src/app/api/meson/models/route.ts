@@ -21,6 +21,7 @@ export async function GET(req: NextRequest) {
   const keys: AvailabilityKeys = {
     gemini: process.env.GEMINI_API_KEY_SHARED,
     mistral: process.env.MISTRAL_API_KEY,
+    pollinations: process.env.POLLINATIONS_API_KEY,
   };
   const statuses = await resolveLiveStatuses(entries, keys);
 

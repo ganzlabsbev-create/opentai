@@ -35,10 +35,20 @@ export const MESON_REGISTRY: MesonEntry[] = [
   { mesonId: "meson-1.9", mesonName: "Meson 1.9", category: "chat", providerId: "mistral", providerModelId: "ministral-8b-2512", declaredStability: "stable", blurb: "Ministral 3 8B" },
   { mesonId: "meson-1.10", mesonName: "Meson 1.10", category: "chat", providerId: "mistral", providerModelId: "ministral-3b-2512", declaredStability: "stable", blurb: "Ministral 3 3B" },
 
+  // 1.11–1.13 — Pollinations general/chat family (shared token via POLLINATIONS_API_KEY;
+  // model ids are Pollinations' own aliases, confirmed live against their
+  // API docs — DeepSeek is intentionally excluded per policy even though
+  // Pollinations offers it, see registry.config.ts header rules)
+  { mesonId: "meson-1.11", mesonName: "Meson 1.11", category: "chat", providerId: "pollinations", providerModelId: "openai-fast", declaredStability: "stable", blurb: "GPT-5 Nano" },
+  { mesonId: "meson-1.12", mesonName: "Meson 1.12", category: "chat", providerId: "pollinations", providerModelId: "openai", declaredStability: "stable", blurb: "GPT-5.4 Nano" },
+  { mesonId: "meson-1.13", mesonName: "Meson 1.13", category: "chat", providerId: "pollinations", providerModelId: "grok", declaredStability: "stable", blurb: "Grok 4.20" },
+
   // 2.x — Pro / Reasoning / Coding
   { mesonId: "meson-2.0", mesonName: "Meson 2.0", category: "pro", providerId: "gemini", providerModelId: "gemini-3.1-pro-preview", declaredStability: "preview", blurb: "Gemini 3.1 Pro (Preview)" },
   { mesonId: "meson-2.1", mesonName: "Meson 2.1", category: "pro", providerId: "gemini", providerModelId: "gemini-3-flash-preview", declaredStability: "preview", blurb: "Gemini 3 Flash (Preview)" },
   { mesonId: "meson-2.2", mesonName: "Meson 2.2", category: "pro", providerId: "mistral", providerModelId: "codestral-2508", declaredStability: "stable", blurb: "Codestral" },
+  { mesonId: "meson-2.3", mesonName: "Meson 2.3", category: "pro", providerId: "pollinations", providerModelId: "openai-large", declaredStability: "stable", blurb: "GPT-5.4" },
+  { mesonId: "meson-2.4", mesonName: "Meson 2.4", category: "pro", providerId: "pollinations", providerModelId: "qwen-coder", declaredStability: "stable", blurb: "Qwen3 Coder 30B" },
 
   // 3.x — Image Generation / Editing
   { mesonId: "meson-3.0", mesonName: "Meson 3.0", category: "image", providerId: "gemini", providerModelId: "gemini-3.1-flash-image", declaredStability: "stable", blurb: "Gemini 3.1 Flash Image" },

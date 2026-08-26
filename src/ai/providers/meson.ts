@@ -54,7 +54,7 @@ async function* parseSse(response: Response, signal?: AbortSignal): AsyncGenerat
 export const MesonProvider: AIProvider = {
   id: "meson",
   name: "Meson",
-  desc: "โมเดลกลางของแอป — ใช้ฟรีผ่าน key กลาง (จำกัด 20 ครั้ง/วัน) หรือใส่ Gemini API key ของตัวเองใน Settings เพื่อไม่จำกัด",
+  desc: "โมเดลกลางของแอป — ใช้ฟรีผ่าน key กลาง (15 ครั้ง/วัน ปกติ, 25 ครั้ง/วัน ถ้าเข้าสู่ระบบด้วย GitHub) หรือใส่ Gemini API key ของตัวเองใน Settings เพื่อไม่จำกัด",
   // Marked true so `localOnly` mode correctly excludes it (it does leave the
   // browser, to our own /api/meson/chat route) even though no user-supplied
   // key is strictly required — see isConfigured below.

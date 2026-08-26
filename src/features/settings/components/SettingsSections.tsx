@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/Button";
 import { Toggle } from "@/components/ui/Toggle";
 import { useToast } from "@/components/ui/Toast";
 import { SettingsRow, SettingsSectionLabel } from "@/features/settings/components/SettingsRow";
+import { GithubAccountRow } from "@/features/auth/components/GithubAccountRow";
+import { PuterSignInButton } from "@/features/puter/PuterSignInButton";
 import { useConversations } from "@/features/chat/store/ConversationsProvider";
 import { useSettings } from "@/features/settings/store/SettingsProvider";
 import { exportBackupBlob, importBackup } from "@/core/backup";
@@ -69,6 +71,12 @@ export function SettingsSections() {
 
   return (
     <div>
+      <SettingsSectionLabel>บัญชี</SettingsSectionLabel>
+      <GithubAccountRow />
+      <SettingsRow label="Puter (ทดลอง)" desc="บัญชีแยกต่างหาก ไม่เกี่ยวกับโควตา IP/GitHub ด้านบน — puter.com">
+        <PuterSignInButton />
+      </SettingsRow>
+
       <SettingsSectionLabel>ทั่วไป</SettingsSectionLabel>
       <SettingsRow label="ภาษา">
         <span className="text-[13px] text-text-muted">ไทย</span>

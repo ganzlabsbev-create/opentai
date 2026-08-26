@@ -66,9 +66,28 @@ async function fetchMistralModelIds(apiKey: string): Promise<Set<string> | null>
   }
 }
 
+/** Pollinations' unified Gen gateway — OpenAI-compatible `GET /v1/models`, returns `{ data: [{ id: string }] }`, same shape as Mistral's. */
+async function fetchPollinationsModelIds(apiKey: string): Promise<Set<string> | null> {
+  try {
+    const res = await fetch("https://gen.pollinations.ai/v1/models", {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    if (!res.ok) {
+      console.error(`[meson/availability] pollinations models list failed: ${res.status} ${res.statusText}`);
+      return null;
+    }
+    const data = (await res.json()) as { data?: { id: string }[] };
+    return new Set((data.data ?? []).map((m) => m.id));
+  } catch (err) {
+    console.error("[meson/availability] pollinations models list threw:", err);
+    return null;
+  }
+}
+
 const FETCHERS: Record<MesonProviderId, (apiKey: string) => Promise<Set<string> | null>> = {
   gemini: fetchGeminiModelIds,
   mistral: fetchMistralModelIds,
+  pollinations: fetchPollinationsModelIds,
 };
 
 async function getAvailableModelIds(providerId: MesonProviderId, apiKey: string): Promise<Set<string> | null> {

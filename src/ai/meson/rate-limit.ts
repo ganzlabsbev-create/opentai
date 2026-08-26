@@ -1,15 +1,18 @@
 import { kv } from "./kv-client";
 
 /**
- * Rate limit for the shared/central Gemini key only. BYOK requests (user's
- * own key) are never limited here — this exists purely to stop the free
- * shared key from being drained.
+ * Rate limit for the shared/central provider keys only. BYOK requests
+ * (user's own key) are never limited here — this exists purely to stop the
+ * free shared keys from being drained.
  *
- * Limit: 20 requests / rolling 24h / IP, counted across ALL Meson
- * categories combined (chat + image + tts + embed + live + video + robotics
- * all share the same counter) — not 20 per model.
+ * Two quota tiers, each its own counter (never merged — see
+ * key-resolution.ts for which scope key is chosen):
+ *   - not logged in with GitHub → scoped by IP → 15 req/rolling 24h
+ *   - logged in with GitHub     → scoped by GitHub user id → 25 req/rolling 24h
+ * Each counter is combined across ALL Meson categories (chat + image + tts +
+ * embed + live + video + robotics all share the same counter within a
+ * scope) — not N per model, and not per provider either.
  */
-const DAILY_LIMIT = 20;
 const WINDOW_SECONDS = 24 * 60 * 60;
 
 export interface RateLimitResult {
@@ -18,17 +21,21 @@ export interface RateLimitResult {
   limit: number;
 }
 
-function keyFor(ip: string): string {
-  return `meson:sharedkey:ratelimit:${ip}`;
+function keyFor(scopeKey: string): string {
+  return `meson:sharedkey:ratelimit:${scopeKey}`;
 }
 
 /**
- * Atomically increments the counter for this IP and checks it against the
- * limit. Uses KV INCR + EXPIRE (set only on first increment) so the window
- * is a rolling 24h from first use, not a fixed calendar day.
+ * Atomically increments the counter for `scopeKey` and checks it against
+ * `limit`. Uses KV INCR + EXPIRE (set only on first increment) so the
+ * window is a rolling 24h from first use, not a fixed calendar day.
+ *
+ * `scopeKey` should already carry its scope prefix, e.g. `ip:1.2.3.4` or
+ * `gh:12345` — see key-resolution.ts, which is the only caller. The two
+ * scopes never share a counter even for the "same" underlying visitor.
  */
-export async function checkAndConsumeSharedKeyQuota(ip: string): Promise<RateLimitResult> {
-  const key = keyFor(ip);
+export async function checkAndConsumeSharedKeyQuota(scopeKey: string, limit: number): Promise<RateLimitResult> {
+  const key = keyFor(scopeKey);
 
   let count: number;
   try {
@@ -41,11 +48,11 @@ export async function checkAndConsumeSharedKeyQuota(ip: string): Promise<RateLim
     // better to briefly deny free-tier traffic than let quota be drained
     // unbounded while KV is unreachable.
     console.error("[meson/rate-limit] KV error, denying shared-key request:", err);
-    return { allowed: false, remaining: 0, limit: DAILY_LIMIT };
+    return { allowed: false, remaining: 0, limit };
   }
 
-  const remaining = Math.max(0, DAILY_LIMIT - count);
-  return { allowed: count <= DAILY_LIMIT, remaining, limit: DAILY_LIMIT };
+  const remaining = Math.max(0, limit - count);
+  return { allowed: count <= limit, remaining, limit };
 }
 
 export function getClientIp(headers: Headers): string {

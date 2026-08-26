@@ -2,6 +2,7 @@ import type { MesonProviderId } from "@/ai/meson/types";
 import type { ChatProxy } from "./types";
 import { proxyGeminiChat } from "./gemini-chat";
 import { proxyMistralChat } from "./mistral-chat";
+import { proxyPollinationsChat } from "./pollinations-chat";
 
 export type { ChatProxy, ProxyChatParams, ProxyChatMessage } from "./types";
 
@@ -9,4 +10,5 @@ export type { ChatProxy, ProxyChatParams, ProxyChatMessage } from "./types";
 export const CHAT_PROXIES: Record<MesonProviderId, ChatProxy> = {
   gemini: proxyGeminiChat,
   mistral: proxyMistralChat,
+  pollinations: proxyPollinationsChat,
 };
