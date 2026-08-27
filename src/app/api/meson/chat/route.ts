@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { getMesonEntry } from "@/ai/meson/registry";
 import { resolveProviderKey, mesonErrorResponse, MesonKeyError } from "@/ai/meson/key-resolution";
 import { CHAT_PROXIES } from "@/ai/meson/providers";
+import { TEMPORARILY_DISABLED_MESON_IDS } from "@/ai/meson/registry.config";
 
 export const runtime = "nodejs";
 
@@ -29,6 +30,9 @@ export async function POST(req: NextRequest) {
 
   const entry = getMesonEntry(body.mesonId);
   if (!entry) return mesonErrorResponse(new MesonKeyError(404, `ไม่รู้จัก mesonId "${body.mesonId}"`));
+  if (TEMPORARILY_DISABLED_MESON_IDS.has(entry.mesonId)) {
+    return mesonErrorResponse(new MesonKeyError(503, `${entry.mesonName} ปิดใช้งานชั่วคราว กรุณาเลือกโมเดลอื่น`));
+  }
   if (entry.category !== "chat" && entry.category !== "pro") {
     return mesonErrorResponse(new MesonKeyError(400, `${entry.mesonName} ไม่ใช่โมเดลแชท ใช้ route นี้ไม่ได้`));
   }
@@ -42,7 +46,7 @@ export async function POST(req: NextRequest) {
 
   let resolved;
   try {
-    resolved = await resolveProviderKey(req, entry.providerId);
+    resolved = await resolveProviderKey(req, entry.providerId, { deferQuotaCommit: true });
   } catch (err) {
     return mesonErrorResponse(err);
   }
@@ -55,6 +59,10 @@ export async function POST(req: NextRequest) {
       context: body.context,
       signal: req.signal,
     });
+    // Only counts against the shared-key quota once the provider actually
+    // accepted the request and started answering — a timeout or upstream
+    // error above never reaches this line, so it never costs the user a use.
+    await resolved.commitSharedKeyUsage();
     response.headers.set("X-Meson-Used-Shared-Key", String(resolved.usingSharedKey));
     return response;
   } catch (err) {

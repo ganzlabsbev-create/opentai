@@ -1,15 +1,15 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { TopBar } from "@/components/layout/TopBar";
+import { useDrawer } from "@/components/layout/DrawerProvider";
 import { ChatScreen } from "@/features/chat/components/ChatScreen";
 import { ModelPickerSheet } from "@/features/models/components/ModelPickerSheet";
 import { useConversation } from "@/features/chat/hooks/useConversation";
 import { useModelSelection } from "@/features/models/store/ModelSelectionProvider";
 
 export default function ChatConversationPage({ params }: { params: { id: string } }) {
-  const router = useRouter();
+  const { openDrawer } = useDrawer();
   const { selectedModel, setSelectedModel } = useModelSelection();
   const [input, setInput] = useState("");
   const [modelPickerOpen, setModelPickerOpen] = useState(false);
@@ -23,7 +23,7 @@ export default function ChatConversationPage({ params }: { params: { id: string 
 
   return (
     <>
-      <TopBar title={conv ? conv.title : "OpenTai"} onBack={() => router.push("/")} />
+      <TopBar title={conv ? conv.title : "OpenTai"} onMenu={openDrawer} />
       <ChatScreen
         conv={conv}
         input={input}

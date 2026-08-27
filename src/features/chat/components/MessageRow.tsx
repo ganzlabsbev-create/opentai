@@ -196,6 +196,9 @@ export function MessageRow({ msg, convId, onRegenerate }: MessageRowProps) {
       ) : (
         <>
           <MarkdownMessage text={msg.content} />
+          {msg.streaming && (
+            <span className="ml-0.5 inline-block h-[13px] w-[2px] translate-y-[2px] animate-pulse bg-accent" />
+          )}
           {msg.providerId && (
             <div className="mt-0.5 text-[10.5px] text-text-muted">
               {msg.providerId}

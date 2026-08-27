@@ -1,6 +1,6 @@
 import { AppError } from "@/types/errors";
 import type { AIProvider, GenerateParams } from "@/ai/providers/types";
-import { MESON_REGISTRY } from "@/ai/meson/registry.config";
+import { MESON_REGISTRY, TEMPORARILY_DISABLED_MESON_IDS } from "@/ai/meson/registry.config";
 
 /**
  * This provider only covers Meson categories that this chat UI actually
@@ -8,8 +8,13 @@ import { MESON_REGISTRY } from "@/ai/meson/registry.config";
  * (image/tts/live/video/embedding/robotics) have working backend routes
  * under /api/meson/* already, but no chat-UI surface yet — wiring those in
  * is a separate front-end feature per category, not part of this provider.
+ * Temporarily disabled ids (see registry.config.ts) are excluded here too,
+ * so they can never become the resolved default model even for users whose
+ * saved `defaultModelId` still points at one.
  */
-const CHAT_MODELS = MESON_REGISTRY.filter((e) => e.category === "chat" || e.category === "pro").map((e) => ({
+const CHAT_MODELS = MESON_REGISTRY.filter(
+  (e) => (e.category === "chat" || e.category === "pro") && !TEMPORARILY_DISABLED_MESON_IDS.has(e.mesonId)
+).map((e) => ({
   id: e.mesonId,
   name: e.mesonName,
   capability: e.blurb,

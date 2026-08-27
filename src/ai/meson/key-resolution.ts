@@ -1,11 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { MesonProviderId } from "@/ai/meson/types";
 import { auth } from "@/auth";
-import { checkAndConsumeSharedKeyQuota, getClientIp } from "./rate-limit";
+import { checkAndConsumeSharedKeyQuota, peekSharedKeyQuota, getClientIp } from "./rate-limit";
 
 export interface ResolvedKey {
   apiKey: string;
   usingSharedKey: boolean;
+  /**
+   * Commits shared-key quota usage. When `resolveProviderKey` was called
+   * with `deferQuotaCommit: true`, the quota was only *checked* (peeked),
+   * not consumed — call this once the request has actually produced an
+   * answer, so a request that never gets a response back (timeout, upstream
+   * error, abort) doesn't cost the user a use. When `deferQuotaCommit`
+   * wasn't set, quota was already consumed synchronously as before and this
+   * is a no-op. Always a no-op for BYOK.
+   */
+  commitSharedKeyUsage: () => Promise<void>;
 }
 
 export class MesonKeyError extends Error {
@@ -70,14 +80,25 @@ export async function resolveQuotaScope(req: NextRequest): Promise<{ scopeKey: s
  *     Meson providers/categories within that scope.
  * Throws MesonKeyError (with an HTTP status) if neither is usable — the
  * caller is expected to turn that into an error response, never a crash.
+ *
+ * `deferQuotaCommit` (default false — unchanged behavior for existing
+ * callers): when true, shared-key quota is only checked here (peeked, not
+ * incremented) and the caller must call the returned `commitSharedKeyUsage`
+ * once it knows the request actually got an answer back. Used by the chat
+ * route so a request that times out or errors upstream doesn't burn a use.
  */
-export async function resolveProviderKey(req: NextRequest, providerId: MesonProviderId): Promise<ResolvedKey> {
+export async function resolveProviderKey(
+  req: NextRequest,
+  providerId: MesonProviderId,
+  options?: { deferQuotaCommit?: boolean }
+): Promise<ResolvedKey> {
   const config = PROVIDER_ENV[providerId];
+  const noopCommit = async () => {};
 
   if (config.byokHeader) {
     const byokKey = req.headers.get(config.byokHeader);
     if (byokKey && byokKey.trim().length > 0) {
-      return { apiKey: byokKey.trim(), usingSharedKey: false };
+      return { apiKey: byokKey.trim(), usingSharedKey: false, commitSharedKeyUsage: noopCommit };
     }
   }
 
@@ -90,18 +111,32 @@ export async function resolveProviderKey(req: NextRequest, providerId: MesonProv
   }
 
   const { scopeKey, limit, loggedIn } = await resolveQuotaScope(req);
-  const quota = await checkAndConsumeSharedKeyQuota(scopeKey, limit);
-  if (!quota.allowed) {
-    const hint = loggedIn
-      ? "ใส่ API key ของตัวเองในตั้งค่าเพื่อใช้ต่อได้ไม่จำกัด"
-      : `เข้าสู่ระบบด้วย GitHub เพื่อเพิ่มโควตาเป็น ${GITHUB_DAILY_LIMIT} ครั้ง/วัน หรือใส่ API key ของตัวเองในตั้งค่าเพื่อใช้ต่อได้ไม่จำกัด`;
-    throw new MesonKeyError(
+  const overQuotaError = (usedOrLimit: number) =>
+    new MesonKeyError(
       429,
-      `โควตาฟรีของ key กลางหมดแล้ว (จำกัด ${quota.limit} ครั้ง/วัน รวมทุกโมเดล/ทุกผู้ให้บริการ) ${hint}`
+      `โควตาฟรีของ key กลางหมดแล้ว (จำกัด ${usedOrLimit} ครั้ง/วัน รวมทุกโมเดล/ทุกผู้ให้บริการ) ${
+        loggedIn
+          ? "ใส่ API key ของตัวเองในตั้งค่าเพื่อใช้ต่อได้ไม่จำกัด"
+          : `เข้าสู่ระบบด้วย GitHub เพื่อเพิ่มโควตาเป็น ${GITHUB_DAILY_LIMIT} ครั้ง/วัน หรือใส่ API key ของตัวเองในตั้งค่าเพื่อใช้ต่อได้ไม่จำกัด`
+      }`
     );
+
+  if (options?.deferQuotaCommit) {
+    const peek = await peekSharedKeyQuota(scopeKey, limit);
+    if (peek.remaining <= 0) throw overQuotaError(peek.limit);
+    return {
+      apiKey: sharedKey,
+      usingSharedKey: true,
+      commitSharedKeyUsage: async () => {
+        await checkAndConsumeSharedKeyQuota(scopeKey, limit);
+      },
+    };
   }
 
-  return { apiKey: sharedKey, usingSharedKey: true };
+  const quota = await checkAndConsumeSharedKeyQuota(scopeKey, limit);
+  if (!quota.allowed) throw overQuotaError(quota.limit);
+
+  return { apiKey: sharedKey, usingSharedKey: true, commitSharedKeyUsage: noopCommit };
 }
 
 /** Back-compat alias — existing routes (image/tts/embed/video/robotics/live-token) are Gemini-only and call this directly. */

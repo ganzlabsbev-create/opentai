@@ -73,3 +73,11 @@ export const MESON_REGISTRY: MesonEntry[] = [
   { mesonId: "meson-8.0", mesonName: "Meson 8.0", category: "robotics", providerId: "gemini", providerModelId: "gemini-robotics-er-2-preview", declaredStability: "preview", blurb: "Gemini Robotics-ER 2 (Preview)" },
   { mesonId: "meson-8.1", mesonName: "Meson 8.1", category: "robotics", providerId: "gemini", providerModelId: "gemini-robotics-er-1.6-preview", declaredStability: "preview", blurb: "Gemini Robotics-ER 1.6 (Preview)" },
 ];
+
+/**
+ * Meson ids pulled from the model picker and blocked at the chat API,
+ * without touching/removing the MESON_REGISTRY entries above — re-enabling
+ * is a one-line revert here. Add/remove ids as needed; never edit the
+ * registry entries themselves for this.
+ */
+export const TEMPORARILY_DISABLED_MESON_IDS = new Set<string>(["meson-1.0"]);

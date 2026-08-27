@@ -17,8 +17,8 @@ function mapHttpError(status: number, body: string): MesonKeyError {
   return new MesonKeyError(status, body || `ผู้ให้บริการตอบกลับผิดพลาด (${status})`);
 }
 
-/** fetch() with a connect-timeout that stops applying once the response headers arrive, so a long SSE reply is never cut short — only a stuck/slow connection is. */
-async function fetchWithConnectTimeout(url: string, init: RequestInit, externalSignal?: AbortSignal): Promise<Response> {
+/** fetch() with a connect-timeout that stops applying once the response headers arrive, so a long SSE reply is never cut short — only a stuck/slow connection is. Shared across all chat proxies (Gemini included) so none of them can hang forever waiting on a stuck upstream connection. */
+export async function fetchWithConnectTimeout(url: string, init: RequestInit, externalSignal?: AbortSignal): Promise<Response> {
   const controller = new AbortController();
   const onExternalAbort = () => controller.abort();
   if (externalSignal) {

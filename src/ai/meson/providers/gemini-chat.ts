@@ -1,4 +1,5 @@
 import { MesonKeyError } from "@/ai/meson/key-resolution";
+import { fetchWithConnectTimeout } from "./openai-compat-chat";
 import type { ChatProxy } from "./types";
 
 /**
@@ -6,6 +7,13 @@ import type { ChatProxy } from "./types";
  * as-is — Gemini's chunk shape (`candidates[0].content.parts[].text`) is
  * already the shape the client parser expects, so no transform is needed
  * here (unlike the OpenAI-compatible proxies).
+ *
+ * Uses the same connect-timeout wrapper as the OpenAI-compatible proxies
+ * (Mistral/Pollinations) — previously this was a bare `fetch()` with no
+ * timeout at all, so a stuck/slow connection to Google could hang the
+ * request indefinitely with no error and nothing to show the user. The
+ * timeout only guards getting the response headers; once the stream starts,
+ * a long reply is never cut short.
  */
 export const proxyGeminiChat: ChatProxy = async ({ entry, apiKey, messages, context, signal }) => {
   const contents = messages
@@ -25,13 +33,18 @@ export const proxyGeminiChat: ChatProxy = async ({ entry, apiKey, messages, cont
 
   let upstream: Response;
   try {
-    upstream = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(requestBody),
-      signal,
-    });
-  } catch {
+    upstream = await fetchWithConnectTimeout(
+      url,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody),
+      },
+      signal
+    );
+  } catch (err) {
+    if (err instanceof MesonKeyError) throw err;
+    if (err instanceof DOMException && err.name === "AbortError") throw err;
     throw new MesonKeyError(502, "เชื่อมต่อ Gemini ไม่สำเร็จ");
   }
 

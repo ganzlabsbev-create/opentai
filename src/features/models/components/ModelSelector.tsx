@@ -4,7 +4,7 @@ import { ArrowUpRight, CircleCheck } from "lucide-react";
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/Toast";
-import { MESON_REGISTRY } from "@/ai/meson/registry.config";
+import { MESON_REGISTRY, TEMPORARILY_DISABLED_MESON_IDS } from "@/ai/meson/registry.config";
 import { useModelSelection } from "@/features/models/store/ModelSelectionProvider";
 import { useSettings } from "@/features/settings/store/SettingsProvider";
 import { MESON_CATEGORY_DISPLAY } from "@/features/models/lib/mesonCategoryDisplay";
@@ -24,6 +24,7 @@ export function ModelSelector() {
   const entriesByCategory = useMemo(() => {
     const map = new Map<string, typeof MESON_REGISTRY>();
     for (const entry of MESON_REGISTRY) {
+      if (TEMPORARILY_DISABLED_MESON_IDS.has(entry.mesonId)) continue;
       const list = map.get(entry.category) ?? [];
       list.push(entry);
       map.set(entry.category, list);
