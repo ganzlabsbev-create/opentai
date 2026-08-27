@@ -48,7 +48,7 @@ export function Drawer({ open, onClose }: DrawerProps) {
       >
         <div className="flex items-center justify-between px-3 pb-2 pt-3.5">
           <div className="flex items-center gap-2 pl-1">
-            <div className="flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-[8px] bg-accent p-[5px]">
+            <div className="flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-[8px] bg-black p-[5px] dark:bg-white">
               <img src="/brand/ot-mark-white.svg" alt="" className="h-full w-full dark:hidden" />
               <img src="/brand/ot-mark.svg" alt="" className="hidden h-full w-full dark:block" />
             </div>
