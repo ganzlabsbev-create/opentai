@@ -2,6 +2,7 @@
 
 import { Download, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Toggle } from "@/components/ui/Toggle";
 import { useToast } from "@/components/ui/Toast";
@@ -14,6 +15,7 @@ import { AppError } from "@/types/errors";
 
 export function SettingsSections() {
   const toast = useToast();
+  const router = useRouter();
   const { settings, updateSettings, clearApiKeys, resetApp } = useSettings();
   const { clearAllHistory } = useConversations();
   const importInputRef = useRef<HTMLInputElement>(null);
@@ -83,6 +85,11 @@ export function SettingsSections() {
       </SettingsRow>
 
       <SettingsSectionLabel>AI</SettingsSectionLabel>
+      <SettingsRow label="โควตาการใช้งาน" desc="ดูโควตา key กลางที่เหลือวันนี้">
+        <Button size="sm" variant="outline" onClick={() => router.push("/quota")}>
+          ดู
+        </Button>
+      </SettingsRow>
       <SettingsRow label="การจัดเส้นทางอัตโนมัติ" desc="สลับ provider เมื่อ quota หมด">
         <Toggle checked={settings.autoRouting} onChange={(v) => updateSettings({ autoRouting: v })} />
       </SettingsRow>

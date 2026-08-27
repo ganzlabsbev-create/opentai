@@ -55,6 +55,37 @@ export async function checkAndConsumeSharedKeyQuota(scopeKey: string, limit: num
   return { allowed: count <= limit, remaining, limit };
 }
 
+export interface QuotaPeekResult {
+  used: number;
+  limit: number;
+  remaining: number;
+  resetInSeconds: number;
+}
+
+/**
+ * Read-only peek at the shared-key quota counter for `scopeKey` — uses
+ * KV GET + TTL, never INCR, so calling this does not consume any quota.
+ * Used by the /quota page so users can check their usage without it
+ * counting against them.
+ *
+ * If the counter has never been incremented today (key doesn't exist yet),
+ * returns used=0 and resetInSeconds=0 — there's nothing to count down from
+ * until the first shared-key request of the window.
+ */
+export async function peekSharedKeyQuota(scopeKey: string, limit: number): Promise<QuotaPeekResult> {
+  const key = keyFor(scopeKey);
+
+  try {
+    const [count, ttl] = await Promise.all([kv.get<number>(key), kv.ttl(key)]);
+    const used = typeof count === "number" && count > 0 ? count : 0;
+    const resetInSeconds = used > 0 && typeof ttl === "number" && ttl > 0 ? ttl : 0;
+    return { used, limit, remaining: Math.max(0, limit - used), resetInSeconds };
+  } catch (err) {
+    console.error("[meson/rate-limit] KV error while peeking shared-key quota:", err);
+    return { used: 0, limit, remaining: limit, resetInSeconds: 0 };
+  }
+}
+
 export function getClientIp(headers: Headers): string {
   // Vercel sets x-forwarded-for; take the first (client) address.
   const fwd = headers.get("x-forwarded-for");

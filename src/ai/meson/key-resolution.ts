@@ -44,8 +44,13 @@ const PROVIDER_LABEL_TH: Record<MesonProviderId, string> = {
 const IP_DAILY_LIMIT = 15;
 const GITHUB_DAILY_LIMIT = 25;
 
-/** Picks the rate-limit scope key + limit for this request based on GitHub Login session state (see src/auth.ts). Never merges the two scopes. */
-async function resolveQuotaScope(req: NextRequest): Promise<{ scopeKey: string; limit: number; loggedIn: boolean }> {
+/**
+ * Picks the rate-limit scope key + limit for this request based on GitHub
+ * Login session state (see src/auth.ts). Never merges the two scopes.
+ * Exported so GET /api/meson/quota can resolve the same scope/limit a real
+ * Meson request would use, without duplicating the session/IP logic here.
+ */
+export async function resolveQuotaScope(req: NextRequest): Promise<{ scopeKey: string; limit: number; loggedIn: boolean }> {
   const session = await auth();
   const githubId = session?.user?.githubId;
   if (githubId) {
