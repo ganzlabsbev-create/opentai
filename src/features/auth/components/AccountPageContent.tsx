@@ -17,11 +17,10 @@ export function AccountPageContent() {
   if (status !== "loading" && !signedInAnywhere) {
     return (
       <div className="flex flex-col items-center px-6 pb-8 pt-12 text-center">
-        <img src="/brand/ot-mark.svg" alt="" className="h-14 w-14 dark:hidden" />
-        <img src="/brand/ot-mark-white.svg" alt="" className="hidden h-14 w-14 dark:block" />
-        <img src="/brand/opentai-wordmark.svg" alt="OpenTai" className="mt-3 h-8 w-auto dark:hidden" />
-        <img src="/brand/opentai-wordmark-white.svg" alt="OpenTai" className="mt-3 hidden h-8 w-auto dark:block" />
-
+        <img src="/brand/ot-mark.svg" alt="" className="h-20 w-20 dark:hidden" />
+        <img src="/brand/ot-mark-white.svg" alt="" className="hidden h-20 w-20 dark:block" />
+        <img src="/brand/opentai-wordmark.svg" alt="OpenTai" className="mt-3 h-11 w-auto dark:hidden" />
+        <img src="/brand/opentai-wordmark-white.svg" alt="OpenTai" className="mt-3 hidden h-11 w-auto dark:block" />
         <div className="mt-1 text-[13px] text-text-muted">ยังไม่ได้เข้าสู่ระบบ — เลือกวิธีสมัครบัญชี</div>
 
         <div className="mt-7 flex w-full max-w-[280px] flex-col gap-2.5">
