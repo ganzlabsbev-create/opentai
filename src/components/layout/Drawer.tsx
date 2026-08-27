@@ -6,6 +6,7 @@ import { useState } from "react";
 import { IconButton } from "@/components/ui/IconButton";
 import { useTheme } from "@/hooks/useTheme";
 import { useConversations } from "@/features/chat/store/ConversationsProvider";
+import { AccountBadgeButton } from "@/features/auth/components/AccountBadgeButton";
 
 const DRAWER_LINKS = [
   { id: "projects", label: "โปรเจกต์", icon: FolderKanban, href: "/projects" },
@@ -100,7 +101,7 @@ export function Drawer({ open, onClose }: DrawerProps) {
           )}
         </div>
 
-        <div className="border-t border-border px-2 py-2">
+        <div className="border-t border-border px-2 pb-16 pt-2">
           {DRAWER_LINKS.map((l) => (
             <button
               key={l.id}
@@ -116,6 +117,8 @@ export function Drawer({ open, onClose }: DrawerProps) {
             <span className="text-[13.5px] text-text">{theme === "light" ? "โหมดมืด" : "โหมดสว่าง"}</span>
           </button>
         </div>
+
+        <AccountBadgeButton onClick={() => go("/account")} />
       </div>
     </>
   );
