@@ -1,6 +1,13 @@
+export interface AIChatImage {
+  mimeType: string;
+  base64: string;
+}
+
 export interface AIChatMessage {
   role: "user" | "assistant";
   content: string;
+  /** Only meaningful on "user" messages, and only when the model's supportsVision is true. */
+  images?: AIChatImage[];
 }
 
 export interface AIModelDef {
@@ -8,6 +15,8 @@ export interface AIModelDef {
   name: string;
   capability: string;
   context: string;
+  /** Whether this model accepts image input. Defaults to false when omitted (see deriveModels). */
+  supportsVision?: boolean;
 }
 
 export interface GenerateParams {

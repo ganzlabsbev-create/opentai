@@ -26,6 +26,7 @@ export function deriveModels(settings: AppSettings): ModelInfo[] {
       capability: m.capability,
       context: m.context,
       ready: p.isConfigured(settings.apiKeys[p.id]),
+      supportsVision: m.supportsVision ?? false,
     }))
   );
 }

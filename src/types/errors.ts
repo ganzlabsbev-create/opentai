@@ -16,6 +16,7 @@ export type AppErrorCode =
   | "PARSE_FAILED"
   | "STORAGE_FULL"
   | "OFFLINE"
+  | "VISION_UNSUPPORTED"
   | "UNKNOWN";
 
 const MESSAGES_TH: Record<AppErrorCode, string> = {
@@ -29,6 +30,7 @@ const MESSAGES_TH: Record<AppErrorCode, string> = {
   PARSE_FAILED: "แยกวิเคราะห์เนื้อหาไฟล์นี้ไม่สำเร็จ",
   STORAGE_FULL: "พื้นที่จัดเก็บในเบราว์เซอร์เต็ม",
   OFFLINE: "ไม่มีการเชื่อมต่ออินเทอร์เน็ต",
+  VISION_UNSUPPORTED: "โมเดลที่เลือกอยู่ไม่รองรับการดูรูปภาพ กรุณาเลือกโมเดลอื่นที่มีสัญลักษณ์รูปภาพ",
   UNKNOWN: "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ",
 };
 

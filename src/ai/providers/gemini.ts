@@ -11,8 +11,8 @@ const BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models";
  * in Settings → advanced if Google renames/retires one of these.
  */
 const GEMINI_MODELS = [
-  { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", capability: "แชท, โค้ด, รูปภาพ", context: "1M" },
-  { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro", capability: "แชท, โค้ด, รูปภาพ, เหตุผลเชิงลึก", context: "1M" },
+  { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", capability: "แชท, โค้ด, รูปภาพ", context: "1M", supportsVision: true },
+  { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro", capability: "แชท, โค้ด, รูปภาพ, เหตุผลเชิงลึก", context: "1M", supportsVision: true },
 ];
 
 interface GeminiStreamChunk {
@@ -84,8 +84,15 @@ export const GeminiProvider: AIProvider = {
     if (!apiKey) throw new AppError("INVALID_API_KEY", "ยังไม่ได้ตั้งค่า API key สำหรับ Gemini");
 
     const contents = messages
-      .filter((m) => m.content.trim().length > 0)
-      .map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
+      .filter((m) => m.content.trim().length > 0 || (m.images && m.images.length > 0))
+      .map((m) => {
+        const parts: Record<string, unknown>[] = [];
+        if (m.content.trim()) parts.push({ text: m.content });
+        for (const img of m.images ?? []) {
+          parts.push({ inlineData: { mimeType: img.mimeType, data: img.base64 } });
+        }
+        return { role: m.role === "assistant" ? "model" : "user", parts };
+      });
 
     const body: Record<string, unknown> = { contents };
     if (context && context.trim().length > 0) {

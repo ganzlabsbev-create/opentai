@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 
 interface ChatBody {
   mesonId: string;
-  messages: { role: "user" | "assistant"; content: string }[];
+  messages: { role: "user" | "assistant"; content: string; images?: { mimeType: string; base64: string }[] }[];
   context?: string;
 }
 
@@ -35,6 +35,15 @@ export async function POST(req: NextRequest) {
   }
   if (entry.category !== "chat" && entry.category !== "pro") {
     return mesonErrorResponse(new MesonKeyError(400, `${entry.mesonName} ไม่ใช่โมเดลแชท ใช้ route นี้ไม่ได้`));
+  }
+
+  // Belt-and-suspenders: the composer already hides/warns on the image
+  // button for a non-vision model, but never trust the client alone — a
+  // request with image data against a model that can't read images is
+  // rejected here too, with a message the UI can show as-is.
+  const hasImages = (body.messages ?? []).some((m) => m.images && m.images.length > 0);
+  if (hasImages && !entry.supportsVision) {
+    return mesonErrorResponse(new MesonKeyError(400, `${entry.mesonName} ไม่รองรับการดูรูปภาพ กรุณาเลือกโมเดลอื่น`));
   }
 
   const proxy = CHAT_PROXIES[entry.providerId];

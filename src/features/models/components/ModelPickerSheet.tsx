@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ArrowUpRight } from "lucide-react";
+import { Check, ArrowUpRight, Eye } from "lucide-react";
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { deriveModels } from "@/ai/registry/registry";
@@ -44,7 +44,10 @@ export function ModelPickerSheet({ open, onClose, model, setModel }: ModelPicker
             }`}
           >
             <div className="text-left">
-              <div className="text-[13.5px] font-medium text-text">{m.name}</div>
+              <div className="flex items-center gap-1 text-[13.5px] font-medium text-text">
+                {m.name}
+                {m.supportsVision && <Eye size={11} className="text-text-muted" />}
+              </div>
               <div className="text-[11.5px] text-text-muted">
                 {m.capability} · {m.context}
               </div>

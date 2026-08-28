@@ -17,8 +17,15 @@ import type { ChatProxy } from "./types";
  */
 export const proxyGeminiChat: ChatProxy = async ({ entry, apiKey, messages, context, signal }) => {
   const contents = messages
-    .filter((m) => m.content?.trim().length > 0)
-    .map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
+    .filter((m) => m.content?.trim().length > 0 || (m.images && m.images.length > 0))
+    .map((m) => {
+      const parts: Record<string, unknown>[] = [];
+      if (m.content?.trim()) parts.push({ text: m.content });
+      for (const img of m.images ?? []) {
+        parts.push({ inlineData: { mimeType: img.mimeType, data: img.base64 } });
+      }
+      return { role: m.role === "assistant" ? "model" : "user", parts };
+    });
 
   const requestBody: Record<string, unknown> = { contents };
   if (context?.trim()) {

@@ -109,15 +109,35 @@ function toGeminiShapedStream(upstream: Response): ReadableStream<Uint8Array> {
  * path, since providers can use different path shapes
  * (e.g. `/v1/chat/completions` vs `/chat/completions`).
  */
+/** OpenAI-compatible "content part" shapes for a vision-capable chat completion request. */
+type OpenAIContentPart = { type: "text"; text: string } | { type: "image_url"; image_url: { url: string } };
+
 export function createOpenAICompatChatProxy(chatCompletionsUrl: string): ChatProxy {
   return async function proxyOpenAICompatChat({ entry, apiKey, messages, context, signal }: ProxyChatParams) {
-    const chatMessages: { role: "system" | "user" | "assistant"; content: string }[] = [];
+    const chatMessages: { role: "system" | "user" | "assistant"; content: string | OpenAIContentPart[] }[] = [];
     if (context?.trim()) {
       chatMessages.push({ role: "system", content: `ใช้บริบทต่อไปนี้ประกอบการตอบเมื่อเกี่ยวข้อง:\n\n${context}` });
     }
     for (const m of messages) {
-      if (!m.content?.trim()) continue;
-      chatMessages.push({ role: m.role, content: m.content });
+      const hasImages = !!m.images && m.images.length > 0;
+      if (!m.content?.trim() && !hasImages) continue;
+
+      // Plain-string content when there's no image (identical wire shape to
+      // before this change, for backends that never see an image). Only
+      // switch to the multipart array form when an image is actually
+      // present — some strict OpenAI-compatible backends reject an array
+      // with a single text part where a plain string would've worked.
+      if (!hasImages) {
+        chatMessages.push({ role: m.role, content: m.content });
+        continue;
+      }
+
+      const parts: OpenAIContentPart[] = [];
+      if (m.content?.trim()) parts.push({ type: "text", text: m.content });
+      for (const img of m.images!) {
+        parts.push({ type: "image_url", image_url: { url: `data:${img.mimeType};base64,${img.base64}` } });
+      }
+      chatMessages.push({ role: m.role, content: parts });
     }
 
     const requestBody = {

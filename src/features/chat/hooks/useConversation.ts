@@ -8,13 +8,29 @@ import { useStreaming } from "@/features/chat/hooks/useStreaming";
 import { useLiveVoice } from "@/features/chat/hooks/useLiveVoice";
 import { useFiles } from "@/features/files/store/FilesProvider";
 import { useSettings } from "@/features/settings/store/SettingsProvider";
+import { useModelSelection } from "@/features/models/store/ModelSelectionProvider";
 import { useMesonModels } from "@/features/meson/lib/useMesonModels";
 import { mesonPostJson } from "@/features/meson/lib/mesonClient";
 import { useVideoJobPolling } from "@/features/meson/hooks/useVideoJobPolling";
 import { saveAssistantFile, base64ToArrayBuffer, extFromMimeType } from "@/features/chat/lib/saveAssistantFile";
 import { AppError } from "@/types/errors";
-import type { ChatMessage } from "@/types/chat";
+import type { ChatMessage, ChatMessageImage } from "@/types/chat";
 import type { FileMediaType } from "@/types/file";
+
+/** Strips the `data:<mime>;base64,` prefix a FileReader data URL gives us — providers want the raw base64 payload separately from the mime type. */
+function dataUrlToBase64(dataUrl: string): string {
+  const comma = dataUrl.indexOf(",");
+  return comma === -1 ? dataUrl : dataUrl.slice(comma + 1);
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error ?? new Error("อ่านไฟล์รูปไม่สำเร็จ"));
+    reader.readAsDataURL(file);
+  });
+}
 
 /** Tools selectable from the composer's "+" menu that bypass the normal chat stream. */
 export type MesonToolKind = "image" | "tts" | "video";
@@ -47,6 +63,36 @@ export function useConversation(convId: string | null, onCreated?: (id: string) 
   const [attachedIds, setAttachedIds] = useState<string[]>([]);
   const toggleAttach = useCallback((id: string) => {
     setAttachedIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]));
+  }, []);
+
+  const { selectedModelSupportsVision } = useModelSelection();
+
+  // Images picked via the composer's dedicated "send image" button — held
+  // here (not OPFS/files store) until the next sendMessage() call, then
+  // attached straight onto that user message and cleared. Distinct from
+  // `attachedIds` (existing library files used as text context).
+  const [pendingImages, setPendingImages] = useState<ChatMessageImage[]>([]);
+  const [imagePickError, setImagePickError] = useState<string | null>(null);
+
+  const addPendingImages = useCallback(async (fileList: FileList | File[]) => {
+    setImagePickError(null);
+    const files = Array.from(fileList).filter((f) => f.type.startsWith("image/"));
+    if (files.length === 0) return;
+    try {
+      const read = await Promise.all(
+        files.map(async (f) => {
+          const dataUrl = await readFileAsDataUrl(f);
+          return { mimeType: f.type || "image/png", base64: dataUrlToBase64(dataUrl) };
+        })
+      );
+      setPendingImages((prev) => [...prev, ...read]);
+    } catch {
+      setImagePickError("อ่านรูปภาพไม่สำเร็จ ลองใหม่อีกครั้ง");
+    }
+  }, []);
+
+  const removePendingImage = useCallback((index: number) => {
+    setPendingImages((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
   // Which Meson "+" menu tool is active in the composer, if any. When set,
@@ -264,10 +310,19 @@ export function useConversation(convId: string | null, onCreated?: (id: string) 
   const sendMessage = useCallback(
     async (text: string) => {
       const content = text.trim();
-      if (!content) return;
 
       if (activeTool) {
+        if (!content) return;
         await sendToolMessage(content, activeTool);
+        return;
+      }
+
+      // A message needs either text or at least one image — but not
+      // necessarily both, so "just send this photo" with no caption works.
+      if (!content && pendingImages.length === 0) return;
+
+      if (pendingImages.length > 0 && !selectedModelSupportsVision) {
+        setImagePickError("โมเดลที่เลือกอยู่ไม่รองรับการดูรูปภาพ กรุณาเลือกโมเดลอื่น (ดูสัญลักษณ์ตาในรายชื่อโมเดล) ก่อนส่ง");
         return;
       }
 
@@ -278,16 +333,26 @@ export function useConversation(convId: string | null, onCreated?: (id: string) 
       }
       latestConvId.current = targetId;
 
-      const userMsg: ChatMessage = { id: nid("msg"), role: "user", content };
+      const userMsg: ChatMessage = {
+        id: nid("msg"),
+        role: "user",
+        content,
+        ...(pendingImages.length > 0 ? { images: pendingImages } : {}),
+      };
       const aiMsg: ChatMessage = { id: nid("msg"), role: "assistant", content: "", streaming: true };
       latestAiMsgId.current = aiMsg.id;
 
       const priorMessages = conv?.messages ?? [];
       appendMessages(targetId, [userMsg, aiMsg]);
+      setPendingImages([]);
 
       const history = [...priorMessages, userMsg]
-        .filter((m) => m.content.trim().length > 0)
-        .map((m) => ({ role: m.role, content: m.content }));
+        .filter((m) => m.content.trim().length > 0 || (m.images && m.images.length > 0))
+        .map((m) => ({
+          role: m.role,
+          content: m.content,
+          ...(m.images && m.images.length > 0 ? { images: m.images } : {}),
+        }));
 
       let context: string | undefined;
       if (attachedIds.length > 0) {
@@ -316,6 +381,8 @@ export function useConversation(convId: string | null, onCreated?: (id: string) 
       files,
       readFileContent,
       settings,
+      pendingImages,
+      selectedModelSupportsVision,
     ]
   );
 
@@ -330,5 +397,11 @@ export function useConversation(convId: string | null, onCreated?: (id: string) 
     activeTool,
     setActiveTool,
     liveVoice,
+    pendingImages,
+    addPendingImages,
+    removePendingImage,
+    imagePickError,
+    clearImagePickError: () => setImagePickError(null),
+    selectedModelSupportsVision,
   };
 }

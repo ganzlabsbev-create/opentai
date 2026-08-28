@@ -7,6 +7,8 @@ import { useSettings } from "@/features/settings/store/SettingsProvider";
 interface ModelSelectionCtxValue {
   selectedModel: string;
   setSelectedModel: (name: string) => void;
+  /** Whether the currently selected chat model accepts image input. False (not undefined) when nothing is resolved yet, so callers can safely gate on it without an extra loading check. */
+  selectedModelSupportsVision: boolean;
 }
 
 const ModelSelectionContext = createContext<ModelSelectionCtxValue | null>(null);
@@ -23,6 +25,7 @@ export function ModelSelectionProvider({ children }: { children: ReactNode }) {
 
   const current = models.find((m) => m.provider === settings.defaultProviderId && m.id === settings.defaultModelId);
   const selectedModel = current?.name ?? models[0]?.name ?? "ยังไม่ได้เลือกโมเดล";
+  const selectedModelSupportsVision = current?.supportsVision ?? false;
 
   const setSelectedModel = useCallback(
     (name: string) => {
@@ -33,7 +36,11 @@ export function ModelSelectionProvider({ children }: { children: ReactNode }) {
     [models, updateSettings]
   );
 
-  return <ModelSelectionContext.Provider value={{ selectedModel, setSelectedModel }}>{children}</ModelSelectionContext.Provider>;
+  return (
+    <ModelSelectionContext.Provider value={{ selectedModel, setSelectedModel, selectedModelSupportsVision }}>
+      {children}
+    </ModelSelectionContext.Provider>
+  );
 }
 
 export function useModelSelection() {

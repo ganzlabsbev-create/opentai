@@ -19,6 +19,7 @@ const CHAT_MODELS = MESON_REGISTRY.filter(
   name: e.mesonName,
   capability: e.blurb,
   context: "-",
+  supportsVision: e.supportsVision,
 }));
 
 interface ChunkShape {

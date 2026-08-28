@@ -173,8 +173,26 @@ export function MessageRow({ msg, convId, onRegenerate }: MessageRowProps) {
   if (isUser) {
     return (
       <div className="flex justify-end py-1.5">
-        <div className="max-w-[82%] rounded-2xl bg-surface-sunk px-3.5 py-2.5 text-[14.5px] leading-[1.55] text-text">
-          {msg.content}
+        <div className="max-w-[82%]">
+          {msg.images && msg.images.length > 0 && (
+            <div className="mb-1 flex flex-wrap justify-end gap-1.5">
+              {msg.images.map((img, i) => (
+                <div key={i} className="h-24 w-24 overflow-hidden rounded-xl border border-border">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={`data:${img.mimeType};base64,${img.base64}`}
+                    alt="รูปที่ส่ง"
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+          {msg.content && (
+            <div className="rounded-2xl bg-surface-sunk px-3.5 py-2.5 text-[14.5px] leading-[1.55] text-text">
+              {msg.content}
+            </div>
+          )}
         </div>
       </div>
     );

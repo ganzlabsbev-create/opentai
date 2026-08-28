@@ -16,4 +16,5 @@ export interface ModelInfo {
   capability: string;
   context: string;
   ready: boolean;
+  supportsVision: boolean;
 }

@@ -21,10 +21,18 @@ export interface MessageAttachment {
  */
 export type MessageKind = "text" | "image" | "video" | "audio";
 
+/** An image the user attached to their own message and sent to a vision-capable model (as opposed to `attachments`, which are downloadable files produced by/for a message). */
+export interface ChatMessageImage {
+  mimeType: string;
+  base64: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: MessageRole;
   content: string;
+  /** Only set on user messages that included image input for a vision model. */
+  images?: ChatMessageImage[];
   streaming?: boolean;
   /** Set when generation failed — rendered instead of / alongside content. */
   errorCode?: string;

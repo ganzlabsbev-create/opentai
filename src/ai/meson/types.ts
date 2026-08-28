@@ -64,6 +64,16 @@ export interface MesonEntry {
   declaredStability: DeclaredStability;
   /** The real model's display name (not a function description — the category already implies that), shown in the picker. e.g. "Gemini 3.7 Flash", "Mistral Medium 3.5". */
   blurb: string;
+  /**
+   * Whether this specific provider model accepts image input alongside text
+   * (vision). This is a real capability of the underlying model, not
+   * something the app can add by "trying harder" — sending image data to a
+   * text-only model does nothing useful (silently ignored or rejected
+   * upstream). Best-effort per-entry judgment call, hand-verify against the
+   * provider's own docs before flipping a false → true. Chat/pro category
+   * only; not meaningful for the other categories.
+   */
+  supportsVision: boolean;
 }
 
 /** What the API/UI actually consumes: registry entry + live-checked status. */

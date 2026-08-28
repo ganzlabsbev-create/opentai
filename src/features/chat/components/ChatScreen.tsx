@@ -5,7 +5,7 @@ import { ChatComposer } from "@/features/chat/components/ChatComposer";
 import { MessageRow } from "@/features/chat/components/MessageRow";
 import type { MesonToolKind } from "@/features/chat/hooks/useConversation";
 import type { useLiveVoice } from "@/features/chat/hooks/useLiveVoice";
-import type { ChatMessage, Conversation } from "@/types/chat";
+import type { ChatMessage, ChatMessageImage, Conversation } from "@/types/chat";
 
 const SUGGESTIONS = ["อธิบายโค้ดชิ้นนี้", "หา bug ในไฟล์แนบ", "สรุป README", "เขียนฟังก์ชันเรียงคำไทย"];
 
@@ -23,6 +23,12 @@ interface ChatScreenProps {
   activeTool: MesonToolKind | null;
   onSetActiveTool: (tool: MesonToolKind | null) => void;
   liveVoice: ReturnType<typeof useLiveVoice>;
+  pendingImages: ChatMessageImage[];
+  onAddPendingImages: (files: FileList | File[]) => void;
+  onRemovePendingImage: (index: number) => void;
+  imagePickError: string | null;
+  onClearImagePickError: () => void;
+  modelSupportsVision: boolean;
 }
 
 export function ChatScreen({
@@ -39,6 +45,12 @@ export function ChatScreen({
   activeTool,
   onSetActiveTool,
   liveVoice,
+  pendingImages,
+  onAddPendingImages,
+  onRemovePendingImage,
+  imagePickError,
+  onClearImagePickError,
+  modelSupportsVision,
 }: ChatScreenProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastMsg = conv?.messages[conv.messages.length - 1];
@@ -103,6 +115,12 @@ export function ChatScreen({
         activeTool={activeTool}
         onSetActiveTool={onSetActiveTool}
         liveVoice={liveVoice}
+        pendingImages={pendingImages}
+        onAddPendingImages={onAddPendingImages}
+        onRemovePendingImage={onRemovePendingImage}
+        imagePickError={imagePickError}
+        onClearImagePickError={onClearImagePickError}
+        modelSupportsVision={modelSupportsVision}
       />
     </div>
   );

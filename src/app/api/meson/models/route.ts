@@ -32,6 +32,7 @@ export async function GET(req: NextRequest) {
     providerId: e.providerId,
     declaredStability: e.declaredStability,
     blurb: e.blurb,
+    supportsVision: e.supportsVision,
     status: statuses.get(e.mesonId) ?? "unknown",
     ...(reveal ? { providerModelId: e.providerModelId } : {}),
   }));

@@ -1,10 +1,12 @@
 "use client";
 
-import { ChevronDown, Clapperboard, ImagePlus, Loader2, Mic, MicOff, Paperclip, Plus, Radio, Send, Square, Volume2, X } from "lucide-react";
+import { ChevronDown, Clapperboard, Image as ImageIcon, ImagePlus, Loader2, Mic, MicOff, Paperclip, Plus, Radio, Send, Square, Volume2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useFiles } from "@/features/files/store/FilesProvider";
+import { useToast } from "@/components/ui/Toast";
 import type { MesonToolKind } from "@/features/chat/hooks/useConversation";
 import type { useLiveVoice } from "@/features/chat/hooks/useLiveVoice";
+import type { ChatMessageImage } from "@/types/chat";
 
 const TOOL_CHIPS: Record<MesonToolKind, { label: string; icon: typeof ImagePlus }> = {
   image: { label: "โหมดสร้างรูปภาพ", icon: ImagePlus },
@@ -25,6 +27,12 @@ interface ChatComposerProps {
   activeTool: MesonToolKind | null;
   onSetActiveTool: (tool: MesonToolKind | null) => void;
   liveVoice: ReturnType<typeof useLiveVoice>;
+  pendingImages: ChatMessageImage[];
+  onAddPendingImages: (files: FileList | File[]) => void;
+  onRemovePendingImage: (index: number) => void;
+  imagePickError: string | null;
+  onClearImagePickError: () => void;
+  modelSupportsVision: boolean;
 }
 
 export function ChatComposer({
@@ -40,9 +48,17 @@ export function ChatComposer({
   activeTool,
   onSetActiveTool,
   liveVoice,
+  pendingImages,
+  onAddPendingImages,
+  onRemovePendingImage,
+  imagePickError,
+  onClearImagePickError,
+  modelSupportsVision,
 }: ChatComposerProps) {
   const { files } = useFiles();
+  const toast = useToast();
   const taRef = useRef<HTMLTextAreaElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const [plusOpen, setPlusOpen] = useState(false);
   const [attachOpen, setAttachOpen] = useState(false);
 
@@ -53,7 +69,31 @@ export function ChatComposer({
     }
   }, [input]);
 
+  // Surface pick/send failures (e.g. "this model can't read images") as a
+  // toast the moment they happen, then clear the error so it doesn't
+  // re-fire on the next unrelated re-render.
+  useEffect(() => {
+    if (imagePickError) {
+      toast(imagePickError, "danger");
+      onClearImagePickError();
+    }
+  }, [imagePickError, toast, onClearImagePickError]);
+
   const attachedFiles = files.filter((f) => attachedIds.includes(f.id));
+
+  // Dedicated "ส่งรูป" button: skips the in-app file drawer entirely and
+  // opens the OS/browser's native image picker directly on tap, so a photo
+  // is one tap away instead of two ("+" → "แนบไฟล์" → browse the file
+  // list). If the currently selected model can't read images at all, say
+  // so immediately instead of letting the person pick a photo that would
+  // just get rejected at send time.
+  const handleImageButtonClick = () => {
+    if (!modelSupportsVision) {
+      toast(`${model} ไม่รองรับการดูรูปภาพ เลือกโมเดลที่มีสัญลักษณ์ตา 👁 ก่อน`, "danger");
+      return;
+    }
+    imageInputRef.current?.click();
+  };
 
   // Gemini Live overlay replaces the normal composer while a call is
   // connecting/live — no navigation away from the chat screen.
@@ -114,6 +154,33 @@ export function ChatComposer({
               {TOOL_CHIPS[activeTool].label}
               <X size={11} />
             </button>
+          </div>
+        )}
+
+        {pendingImages.length > 0 && (
+          <div className="mb-1.5 flex flex-wrap gap-1.5">
+            {pendingImages.map((img, i) => (
+              <div key={i} className="relative h-14 w-14 overflow-hidden rounded-lg border border-border">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`data:${img.mimeType};base64,${img.base64}`}
+                  alt="รูปที่จะส่ง"
+                  className="h-full w-full object-cover"
+                />
+                <button
+                  onClick={() => onRemovePendingImage(i)}
+                  className="absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full border-0 bg-black/60"
+                >
+                  <X size={10} className="text-white" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {pendingImages.length > 0 && !modelSupportsVision && (
+          <div className="mb-1.5 rounded-md border border-danger-soft bg-danger-soft px-2.5 py-1.5 text-[12px] text-danger">
+            {model} ไม่รองรับการดูรูปภาพ — แตะชื่อโมเดลด้านบนแล้วเลือกตัวที่มีสัญลักษณ์ตา 👁 ก่อนส่ง
           </div>
         )}
 
@@ -203,6 +270,23 @@ export function ChatComposer({
           >
             <Plus size={18} className={plusOpen || !!activeTool || attachedFiles.length > 0 ? "text-accent" : "text-text-muted"} />
           </button>
+          {/* Hidden native file input — accept="image/*" makes mobile browsers
+              surface the OS photo picker/camera sheet directly on tap, no
+              detour through the in-app file browser/drawer. */}
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            hidden
+            onChange={(e) => {
+              if (e.target.files && e.target.files.length > 0) onAddPendingImages(e.target.files);
+              e.target.value = "";
+            }}
+          />
+          <button onClick={handleImageButtonClick} className="shrink-0 border-0 bg-transparent p-1.5" title="ส่งรูปภาพ">
+            <ImageIcon size={18} className={pendingImages.length > 0 ? "text-accent" : "text-text-muted"} />
+          </button>
           <textarea
             ref={taRef}
             value={input}
@@ -236,12 +320,12 @@ export function ChatComposer({
           ) : (
             <button
               onClick={onSend}
-              disabled={!input.trim()}
+              disabled={!input.trim() && pendingImages.length === 0}
               className={`flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full border-0 ${
-                input.trim() ? "cursor-pointer bg-accent" : "cursor-not-allowed bg-surface-elevated"
+                input.trim() || pendingImages.length > 0 ? "cursor-pointer bg-accent" : "cursor-not-allowed bg-surface-elevated"
               }`}
             >
-              <Send size={14} className={input.trim() ? "text-accent-text" : "text-text-muted"} />
+              <Send size={14} className={input.trim() || pendingImages.length > 0 ? "text-accent-text" : "text-text-muted"} />
             </button>
           )}
         </div>

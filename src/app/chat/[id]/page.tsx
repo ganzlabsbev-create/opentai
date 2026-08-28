@@ -14,7 +14,23 @@ export default function ChatConversationPage({ params }: { params: { id: string 
   const [input, setInput] = useState("");
   const [modelPickerOpen, setModelPickerOpen] = useState(false);
 
-  const { conv, isStreaming, sendMessage, stopStreaming, attachedIds, toggleAttach, activeTool, setActiveTool, liveVoice } = useConversation(params.id);
+  const {
+    conv,
+    isStreaming,
+    sendMessage,
+    stopStreaming,
+    attachedIds,
+    toggleAttach,
+    activeTool,
+    setActiveTool,
+    liveVoice,
+    pendingImages,
+    addPendingImages,
+    removePendingImage,
+    imagePickError,
+    clearImagePickError,
+    selectedModelSupportsVision,
+  } = useConversation(params.id);
 
   const handleSend = (text?: string) => {
     sendMessage(text ?? input);
@@ -38,6 +54,12 @@ export default function ChatConversationPage({ params }: { params: { id: string 
         activeTool={activeTool}
         onSetActiveTool={setActiveTool}
         liveVoice={liveVoice}
+        pendingImages={pendingImages}
+        onAddPendingImages={addPendingImages}
+        onRemovePendingImage={removePendingImage}
+        imagePickError={imagePickError}
+        onClearImagePickError={clearImagePickError}
+        modelSupportsVision={selectedModelSupportsVision}
       />
       <ModelPickerSheet
         open={modelPickerOpen}
