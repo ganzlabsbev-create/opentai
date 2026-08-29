@@ -7,6 +7,7 @@ import { MarkdownParser, TextParser } from "@/core/parsers/text";
 import type { FileParser, ParsedFile } from "@/core/parsers/types";
 import { extOf } from "@/core/parsers/types";
 import { SqlParser, YamlParser } from "@/core/parsers/yaml_sql";
+import { isBinaryDocument } from "@/core/parsers/binary/registry";
 
 /** Order matters: more specific extensions first, TextParser (accepts `""`) last. */
 const PARSERS: FileParser[] = [
@@ -47,7 +48,7 @@ export const MAX_PARSEABLE_BYTES = 5 * 1024 * 1024; // 5 MB — generous for tex
 
 export function isSupportedFile(name: string): boolean {
   const ext = extOf(name);
-  return ext === "" || SUPPORTED_EXTS.has(ext);
+  return ext === "" || SUPPORTED_EXTS.has(ext) || isBinaryDocument(name);
 }
 
 export function pickParser(name: string, mimeType = ""): FileParser {

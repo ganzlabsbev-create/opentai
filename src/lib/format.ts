@@ -1,12 +1,13 @@
-import { FileText, FileJson, FileCode2, FileSpreadsheet, FileType, type LucideIcon } from "lucide-react";
+import { FileText, FileJson, FileCode2, FileSpreadsheet, FileType, Presentation, type LucideIcon } from "lucide-react";
 import type { FileKind } from "@/types/file";
 
 export function fileIcon(type: FileKind): LucideIcon {
   if (type === "json") return FileJson;
   if (type === "code") return FileCode2;
-  if (type === "csv") return FileSpreadsheet;
+  if (type === "csv" || type === "xlsx") return FileSpreadsheet;
   if (type === "html" || type === "xml") return FileType;
-  return FileText;
+  if (type === "pptx") return Presentation;
+  return FileText; // txt/md/css/yaml/sql/pdf/docx/other
 }
 
 export function formatBytes(bytes: number): string {

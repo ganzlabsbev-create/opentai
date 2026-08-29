@@ -37,7 +37,7 @@ export function FileDropzone({ projectId = null }: FileDropzoneProps) {
         </button>
       </div>
       <div className="mt-1 text-[11px] text-text-muted">
-        รองรับ TXT, MD, JSON, CSV, HTML, CSS, JS/TS/JSX/TSX, XML, YAML, SQL
+        รองรับ TXT, MD, JSON, CSV, HTML, CSS, JS/TS/JSX/TSX, XML, YAML, SQL, PDF, Word, Excel, PowerPoint
       </div>
       <input
         ref={inputRef}

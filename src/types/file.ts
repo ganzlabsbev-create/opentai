@@ -1,4 +1,4 @@
-export type FileKind = "txt" | "md" | "json" | "csv" | "code" | "html" | "css" | "xml" | "yaml" | "sql" | "other";
+export type FileKind = "txt" | "md" | "json" | "csv" | "code" | "html" | "css" | "xml" | "yaml" | "sql" | "pdf" | "docx" | "xlsx" | "pptx" | "other";
 
 /** Where a file came from — user upload vs. produced by an AI tool (image/tts/video/document). */
 export type FileSource = "uploaded" | "ai-generated";
@@ -26,6 +26,14 @@ export interface FileEntry {
   parsed: boolean;
   /** First ~200 chars of parsed text, cached for quick list/preview rendering. */
   preview: string;
+  /**
+   * Full plain-text extraction, set only for binary document kinds (pdf,
+   * docx, xlsx, pptx) whose OPFS bytes are the *original* binary file and
+   * therefore can't be decoded as UTF-8 text like the text/code kinds can.
+   * `readFileContent`/`searchFiles` read from here instead of OPFS for
+   * these kinds. Absent (not just empty) for every non-binary kind.
+   */
+  extractedText?: string;
   /**
    * "uploaded" (default) vs. "ai-generated". Added after the original schema —
    * rows written before this field existed don't have it in IndexedDB, so
